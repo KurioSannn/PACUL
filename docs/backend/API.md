@@ -1407,12 +1407,60 @@ Returns a single available material batch with category and collector summary. S
 }
 ```
 
-No individual household names, listing titles, or addresses are exposed.
+No individual household names, listing titles, or addresses are exposed. Viewing a batch increments its market listing `view_count` when one exists (best-effort).
 
 **Errors**
 
 - `404 MATERIAL_BATCH_NOT_FOUND` — missing or not `available`
 - `403 INSUFFICIENT_ROLE` — household or other roles
+
+## Green Market Listings
+
+Formal market listings for processed material batches. One listing per batch, with quality grade, specifications, photos, and asking price stored separately from the batch record.
+
+### `POST /materials/:batchId/publish-to-market` (collector)
+
+Publishes an `available` material batch as a Green Market listing. Owned by the collector.
+
+**Body**
+
+```json
+{
+  "title": "PET bersih grade A",
+  "quality_grade": "A",
+  "specifications": { "color": "clear", "contamination": "low" },
+  "photos": ["materials/demo/pet-1.jpg"],
+  "asking_price_per_kg": 3600,
+  "available_weight_kg": 120
+}
+```
+
+`quality_grade` is required (`A`, `B`, or `C`). All other fields are optional: `title`, `asking_price_per_kg`, and `available_weight_kg` default to the batch's name, price, and total weight.
+
+**Response:** the created `MaterialMarketListing` (`status: "active"`, `view_count: 0`).
+
+**Errors**
+
+- `404 MATERIAL_BATCH_NOT_FOUND` — missing or not owned by collector
+- `400 BATCH_NOT_AVAILABLE_FOR_MARKET` — batch is not `available`
+- `409 MARKET_LISTING_ALREADY_EXISTS` — batch already has a market listing
+
+### `PATCH /materials/market/:listingId` (collector)
+
+Updates an `active` market listing. Owned by the collector. Accepts any subset of the publish body fields.
+
+**Errors**
+
+- `404 MARKET_LISTING_NOT_FOUND`
+- `400 MARKET_LISTING_NOT_EDITABLE` — listing is `sold` or `withdrawn`
+
+### `POST /materials/market/:listingId/withdraw` (collector)
+
+Withdraws a market listing (`status: "withdrawn"`). Idempotent: withdrawing an already-withdrawn listing returns it unchanged.
+
+**Errors**
+
+- `404 MARKET_LISTING_NOT_FOUND`
 
 ## Orders
 

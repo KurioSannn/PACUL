@@ -111,6 +111,45 @@ export interface MaterialBatchWithDetails extends MaterialBatch {
   collector?: MaterialBatchCollectorSummary;
 }
 
+export type MaterialMarketListingStatus = 'active' | 'sold' | 'withdrawn';
+
+export type MaterialQualityGrade = 'A' | 'B' | 'C';
+
+export interface MaterialMarketListing {
+  id: string;
+  batch_id: string;
+  collector_id: string;
+  category_id: string;
+  title: string;
+  quality_grade: MaterialQualityGrade;
+  specifications: Record<string, unknown>;
+  photos: string[];
+  asking_price_per_kg: number;
+  available_weight_kg: number;
+  status: MaterialMarketListingStatus;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublishToMarketInput {
+  title?: string;
+  quality_grade: MaterialQualityGrade;
+  specifications?: Record<string, unknown>;
+  photos?: string[];
+  asking_price_per_kg?: number;
+  available_weight_kg?: number;
+}
+
+export interface UpdateMarketListingInput {
+  title?: string;
+  quality_grade?: MaterialQualityGrade;
+  specifications?: Record<string, unknown>;
+  photos?: string[];
+  asking_price_per_kg?: number;
+  available_weight_kg?: number;
+}
+
 export interface UpdateMaterialBatchDto {
   name?: string;
   description?: string | null;

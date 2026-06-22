@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { validateMaterialBatchStatusTransition } from '../../common/config/status-transitions';
@@ -24,8 +25,13 @@ import type {
   MaterialBatchSourceWithListing,
   MaterialBatchStatus,
   MaterialBatchWithDetails,
+  MaterialMarketListing,
+  MaterialMarketListingStatus,
+  MaterialQualityGrade,
   MaterialMarketplaceFilters,
   PaginatedMaterialMarketplace,
+  PublishToMarketInput,
+  UpdateMarketListingInput,
 } from './materials.types';
 
 interface MaterialBatchRow {
@@ -103,6 +109,23 @@ interface MarketplaceBatchJoinRow extends MaterialBatchRow {
 
 interface ListingCityRow {
   city: string | null;
+}
+
+interface MaterialMarketListingRow {
+  id: string;
+  batch_id: string;
+  collector_id: string;
+  category_id: string;
+  title: string;
+  quality_grade: string;
+  specifications: Record<string, unknown> | null;
+  photos: string[] | null;
+  asking_price_per_kg: number | string;
+  available_weight_kg: number | string;
+  status: string;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
 }
 
 const BATCH_SELECT = `
@@ -186,6 +209,23 @@ const MARKETPLACE_BATCH_SELECT = `
   )
 `;
 
+const MARKET_LISTING_SELECT = `
+  id,
+  batch_id,
+  collector_id,
+  category_id,
+  title,
+  quality_grade,
+  specifications,
+  photos,
+  asking_price_per_kg,
+  available_weight_kg,
+  status,
+  view_count,
+  created_at,
+  updated_at
+`;
+
 const ELIGIBLE_SOURCE_STATUSES: readonly WasteListingStatus[] = [
   'picked_up',
   'sorting',
@@ -199,6 +239,8 @@ const PUBLISHABLE_SOURCE_STATUSES: readonly WasteListingStatus[] = [
 
 @Injectable()
 export class MaterialBatchService {
+  private readonly logger = new Logger('MaterialBatchService');
+
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly statusTransitionService: StatusTransitionService,
@@ -608,6 +650,8 @@ export class MaterialBatchService {
 
     const sourceSummary = await this.buildMarketplaceSourceSummary(batchId);
 
+    this.incrementMarketViewCount(batchId);
+
     return {
       ...this.mapBatch(data),
       category: this.mapMarketplaceCategory(data.category),
@@ -616,6 +660,249 @@ export class MaterialBatchService {
         data.collector_profile,
       ),
       source_summary: sourceSummary,
+    };
+  }
+
+  async publishToMarketplace(
+    batchId: string,
+    collectorId: string,
+    input: PublishToMarketInput,
+  ): Promise<MaterialMarketListing> {
+    const batch = await this.getCollectorBatchOrThrow(batchId, collectorId);
+
+    if (batch.status !== 'available') {
+      throw new BadRequestException({
+        error: 'Only available material batches can be published to the market',
+        code: 'BATCH_NOT_AVAILABLE_FOR_MARKET',
+      });
+    }
+
+    const admin = this.supabaseService.getAdminClient();
+    const { data, error } = await admin
+      .from('material_market_listings')
+      .insert({
+        batch_id: batchId,
+        collector_id: collectorId,
+        category_id: batch.category_id,
+        title: input.title ?? batch.name,
+        quality_grade: input.quality_grade,
+        specifications: input.specifications ?? {},
+        photos: input.photos ?? [],
+        asking_price_per_kg:
+          input.asking_price_per_kg ?? Number(batch.price_per_kg),
+        available_weight_kg:
+          input.available_weight_kg ?? Number(batch.total_weight_kg),
+        status: 'active',
+      })
+      .select(MARKET_LISTING_SELECT)
+      .single<MaterialMarketListingRow>();
+
+    if (error || !data) {
+      if (error?.code === '23505') {
+        throw new ConflictException({
+          error: 'Material batch is already published to the market',
+          code: 'MARKET_LISTING_ALREADY_EXISTS',
+        });
+      }
+
+      throw new InternalServerErrorException({
+        error: 'Failed to publish material batch to the market',
+        code: 'MARKET_LISTING_CREATE_FAILED',
+        details: error?.message,
+      });
+    }
+
+    return this.mapMarketListing(data);
+  }
+
+  async updateMarketListing(
+    listingId: string,
+    collectorId: string,
+    input: UpdateMarketListingInput,
+  ): Promise<MaterialMarketListing> {
+    const listing = await this.getCollectorMarketListingOrThrow(
+      listingId,
+      collectorId,
+    );
+
+    if (listing.status !== 'active') {
+      throw new BadRequestException({
+        error: 'Only active market listings can be updated',
+        code: 'MARKET_LISTING_NOT_EDITABLE',
+      });
+    }
+
+    const updatePayload = this.buildMarketListingUpdatePayload(input);
+
+    if (Object.keys(updatePayload).length === 0) {
+      return this.mapMarketListing(listing);
+    }
+
+    updatePayload.updated_at = new Date().toISOString();
+
+    const admin = this.supabaseService.getAdminClient();
+    const { data, error } = await admin
+      .from('material_market_listings')
+      .update(updatePayload)
+      .eq('id', listingId)
+      .eq('collector_id', collectorId)
+      .eq('status', 'active')
+      .select(MARKET_LISTING_SELECT)
+      .maybeSingle<MaterialMarketListingRow>();
+
+    if (error) {
+      throw new InternalServerErrorException({
+        error: 'Failed to update market listing',
+        code: 'MARKET_LISTING_UPDATE_FAILED',
+        details: error.message,
+      });
+    }
+
+    if (!data) {
+      throw new BadRequestException({
+        error: 'Market listing is no longer editable',
+        code: 'MARKET_LISTING_NOT_EDITABLE',
+      });
+    }
+
+    return this.mapMarketListing(data);
+  }
+
+  async withdrawMarketListing(
+    listingId: string,
+    collectorId: string,
+  ): Promise<MaterialMarketListing> {
+    const listing = await this.getCollectorMarketListingOrThrow(
+      listingId,
+      collectorId,
+    );
+
+    if (listing.status === 'withdrawn') {
+      return this.mapMarketListing(listing);
+    }
+
+    const admin = this.supabaseService.getAdminClient();
+    const { data, error } = await admin
+      .from('material_market_listings')
+      .update({ status: 'withdrawn', updated_at: new Date().toISOString() })
+      .eq('id', listingId)
+      .eq('collector_id', collectorId)
+      .select(MARKET_LISTING_SELECT)
+      .maybeSingle<MaterialMarketListingRow>();
+
+    if (error || !data) {
+      throw new InternalServerErrorException({
+        error: 'Failed to withdraw market listing',
+        code: 'MARKET_LISTING_WITHDRAW_FAILED',
+        details: error?.message,
+      });
+    }
+
+    return this.mapMarketListing(data);
+  }
+
+  private incrementMarketViewCount(batchId: string): void {
+    void this.applyMarketViewIncrement(batchId).catch((viewError: unknown) => {
+      const message =
+        viewError instanceof Error ? viewError.message : String(viewError);
+      this.logger.warn(`Failed to increment market view count: ${message}`);
+    });
+  }
+
+  private async applyMarketViewIncrement(batchId: string): Promise<void> {
+    const admin = this.supabaseService.getAdminClient();
+    const { data, error } = await admin
+      .from('material_market_listings')
+      .select('id, view_count')
+      .eq('batch_id', batchId)
+      .eq('status', 'active')
+      .maybeSingle<{ id: string; view_count: number }>();
+
+    if (error || !data) {
+      return;
+    }
+
+    await admin
+      .from('material_market_listings')
+      .update({ view_count: data.view_count + 1 })
+      .eq('id', data.id);
+  }
+
+  private async getCollectorMarketListingOrThrow(
+    listingId: string,
+    collectorId: string,
+  ): Promise<MaterialMarketListingRow> {
+    const admin = this.supabaseService.getAdminClient();
+    const { data, error } = await admin
+      .from('material_market_listings')
+      .select(MARKET_LISTING_SELECT)
+      .eq('id', listingId)
+      .eq('collector_id', collectorId)
+      .maybeSingle<MaterialMarketListingRow>();
+
+    if (error) {
+      throw new InternalServerErrorException({
+        error: 'Failed to load market listing',
+        code: 'MARKET_LISTING_LOAD_FAILED',
+        details: error.message,
+      });
+    }
+
+    if (!data) {
+      throw new NotFoundException({
+        error: 'Market listing not found',
+        code: 'MARKET_LISTING_NOT_FOUND',
+      });
+    }
+
+    return data;
+  }
+
+  private buildMarketListingUpdatePayload(
+    input: UpdateMarketListingInput,
+  ): Record<string, unknown> {
+    const payload: Record<string, unknown> = {};
+
+    if (input.title !== undefined) {
+      payload.title = input.title;
+    }
+    if (input.quality_grade !== undefined) {
+      payload.quality_grade = input.quality_grade;
+    }
+    if (input.specifications !== undefined) {
+      payload.specifications = input.specifications;
+    }
+    if (input.photos !== undefined) {
+      payload.photos = input.photos;
+    }
+    if (input.asking_price_per_kg !== undefined) {
+      payload.asking_price_per_kg = input.asking_price_per_kg;
+    }
+    if (input.available_weight_kg !== undefined) {
+      payload.available_weight_kg = input.available_weight_kg;
+    }
+
+    return payload;
+  }
+
+  private mapMarketListing(
+    row: MaterialMarketListingRow,
+  ): MaterialMarketListing {
+    return {
+      id: row.id,
+      batch_id: row.batch_id,
+      collector_id: row.collector_id,
+      category_id: row.category_id,
+      title: row.title,
+      quality_grade: row.quality_grade as MaterialQualityGrade,
+      specifications: row.specifications ?? {},
+      photos: row.photos ?? [],
+      asking_price_per_kg: Number(row.asking_price_per_kg),
+      available_weight_kg: Number(row.available_weight_kg),
+      status: row.status as MaterialMarketListingStatus,
+      view_count: row.view_count,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
     };
   }
 
