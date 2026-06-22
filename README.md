@@ -82,6 +82,24 @@ Bonus and support:
 ## Tailwind CSS
 Tailwind CSS sekarang tersedia dan terpasang melalui `tailwindcss` dan `@tailwindcss/postcss`. Global CSS ada di `src/app/globals.css` dan diimpor dari root layout.
 
+## UI System
+
+Frontend menggunakan Tailwind CSS, shadcn/ui, lucide-react, dan motion untuk komponen UI, ikon, dan micro-interaction.
+
+- `src/components/layout/public-header.tsx`: header publik fixed dengan navigasi desktop dan Sheet menu mobile.
+- `src/components/media/video-backdrop.tsx`: backdrop video dekoratif yang aman, termasuk overlay dan fallback saat video atau motion tidak tersedia.
+- `src/components/home/`: hero PACUL dan slot calon mitra ekosistem tanpa klaim sponsor atau logo eksternal.
+
+## Hero Video Asset
+
+Hero mendukung video lokal opsional pada path berikut:
+
+- `public/videos/pacul-hero.webm`
+- `public/videos/pacul-hero.mp4`
+- `public/images/pacul-hero-poster.jpg`
+
+Jika asset belum tersedia, UI memakai fallback visual hijau dan tetap bisa berjalan. Tidak ada video remote yang digunakan sebagai default.
+
 ## Getting Started
 ```bash
 npm install
