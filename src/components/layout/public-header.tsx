@@ -35,8 +35,8 @@ export function PublicHeader() {
   return (
     <motion.header
       className={cn(
-        "fixed inset-x-0 top-0 z-50 border-b transition-[border-color,background-color,backdrop-filter]",
-        isScrolled ? "border-[var(--color-line)] bg-[rgba(251,253,251,0.94)] backdrop-blur-md" : "border-white/10 bg-transparent",
+        "fixed inset-x-0 top-0 z-50 border-b transition-[border-color,color]",
+        isScrolled ? "border-[var(--color-line)] bg-transparent" : "border-white/10 bg-transparent",
       )}
       animate={prefersReducedMotion ? undefined : { y: 0 }}
       transition={gentleTransition}

@@ -19,14 +19,14 @@ export function PaculHero() {
   const animationState = prefersReducedMotion ? undefined : "hidden";
 
   return (
-    <section id="utama" className="relative isolate overflow-hidden bg-[var(--color-forest-950)] pt-[88px] text-white">
+    <section id="utama" className="relative isolate min-h-[100svh] overflow-hidden bg-[var(--color-forest-950)] pt-[72px] text-white lg:min-h-[100svh]">
       <VideoBackdrop
         srcWebm="/videos/pacul-hero.webm"
         srcMp4="/videos/pacul-hero.mp4"
         poster="/images/pacul-hero-poster.jpg"
         fallbackLabel="Latar hijau PACUL untuk alur daur ulang"
       />
-      <div className="landing-shell relative grid min-h-[41rem] items-center gap-10 py-16 sm:py-18 lg:grid-cols-[1.03fr_0.97fr] lg:gap-12 lg:py-24">
+      <div className="landing-shell relative grid min-h-[calc(100svh-72px)] items-center gap-10 py-16 sm:py-18 lg:grid-cols-[1.03fr_0.97fr] lg:gap-12 lg:py-24">
         <motion.div variants={staggerContainer} initial={animationState} animate="visible" className="max-w-3xl">
           <motion.div variants={slideUp} className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-[var(--color-mint-100)]">
             <span className="size-1.5 rounded-full bg-[var(--color-leaf-500)]" aria-hidden="true" />
