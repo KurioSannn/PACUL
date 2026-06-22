@@ -102,6 +102,12 @@ describe('ClassificationService overrideClassification', () => {
             };
           }
 
+          if (table === 'classification_overrides') {
+            return {
+              insert: jest.fn(() => Promise.resolve({ error: null })),
+            };
+          }
+
           return { select: jest.fn() };
         }),
       })),
