@@ -1,4 +1,22 @@
 node_modules/
 .next/
 out/
+dist/
+coverage/
 *.tsbuildinfo
+
+# Environment & logs
+.env
+.env.*
+!.env.example
+*.log
+
+# Backend seeds output & AI models
+backend/db/seeds/output/
+backend/models/
+models/
+*.onnx
+
+# OS
+.DS_Store
+Thumbs.db
