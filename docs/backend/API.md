@@ -2806,17 +2806,23 @@ Platform-wide impact metrics with optional filters. Responses are cached for 60 
 | `total_material_produced_kg` | Sum of batch weight for produced statuses (`available`, `ordered`, `negotiating`, `sold`, `unavailable`) |
 | `total_material_sold_kg` | Sum of batch weight where `status = sold` |
 | `total_transactions` | Completed/simulated-paid transactions |
-| `estimated_co2_saved_kg` | **`total_material_sold_kg × 2.5`** — platform estimate of kg CO₂ avoided per kg material sold/recycled |
+| `estimated_co2_saved_kg` | Sum over sold material of `weight_kg × per-category emission factor` (see below) |
 | `estimated_economic_value_idr` | Same as `total_transaction_value_idr` |
 | `active_*` | Count of `user_profiles` with `is_active = true` per role (not date-filtered) |
 | `top_categories` | Top 10 categories by collected listing weight; `percentage` is share of collected weight |
 
-**CO₂ formula (documented constant)**
+**CO₂ formula (per-category emission factors)**
 
 ```
-estimated_co2_saved_kg = total_material_sold_kg × CO2_SAVED_KG_PER_RECYCLED_KG
-CO2_SAVED_KG_PER_RECYCLED_KG = 2.5
+estimated_co2_saved_kg = Σ (sold_weight_kg[category] × EMISSION_FACTOR[category_code])
 ```
+
+Emission factors are configured per taxonomy category code in
+`backend/src/common/config/emission-factors.ts`. Materials without a mapped code
+fall back to `DEFAULT_EMISSION_FACTOR` (1.0). See the
+[Impact & Carbon Assumptions](./README.md#impact--carbon-assumptions) table for
+the factor values. **These are simulated demo values, not peer-reviewed LCA
+figures.**
 
 **Errors**
 
@@ -2869,6 +2875,52 @@ Aggregate Sankey-style material flow for visualization. **No PII** — only stag
 - `403 INSUFFICIENT_ROLE` — role not allowed
 - `500 DASHBOARD_SUMMARY_LOAD_FAILED` — aggregate query failed
 
+### `GET /dashboard/local-impact` (household, collector, industry)
+
+Impact metrics aggregated by city for the local impact map. **No PII** — only
+city/province labels and aggregate weights. Responses are cached for 300 seconds
+via `Cache-Control: max-age=300`. Supports the same query filters as
+`/dashboard/impact` (`from`, `to`, `city`, `province`).
+
+**Response:** `LocalImpact`
+
+```json
+{
+  "filters": { "city": "Bandung" },
+  "locations": [
+    {
+      "city": "Bandung",
+      "province": "Jawa Barat",
+      "total_waste_collected_kg": 540.0,
+      "total_material_sold_kg": 320.0,
+      "estimated_co2_saved_kg": 480.0,
+      "listing_count": 36,
+      "pickup_count": 28
+    }
+  ],
+  "totals": {
+    "total_waste_collected_kg": 540.0,
+    "total_material_sold_kg": 320.0,
+    "estimated_co2_saved_kg": 480.0,
+    "location_count": 1
+  }
+}
+```
+
+| Field | Notes |
+| ----- | ----- |
+| `locations[]` | One entry per `city` + `province`, sorted by collected weight desc |
+| `total_waste_collected_kg` | Collected listing weight (actual or estimated) per location |
+| `pickup_count` | Listings reaching a collected lifecycle status per location |
+| `estimated_co2_saved_kg` | Per-category emission factor applied to sold batch weight |
+| Listings/batches with no `city` | Grouped under `"Unknown"` |
+
+**Errors**
+
+- `401` — missing or invalid auth token
+- `403 INSUFFICIENT_ROLE` — role not allowed
+- `500` — aggregate query failed
+
 ### `GET /dashboard/routes` (collector)
 
 Route performance aggregates for the authenticated collector. Responses are cached for 60 seconds via `Cache-Control: max-age=60`.
@@ -2903,3 +2955,45 @@ Route performance aggregates for the authenticated collector. Responses are cach
 - `401` — missing or invalid auth token
 - `403 INSUFFICIENT_ROLE` — caller is not a collector
 - `500 DASHBOARD_SUMMARY_LOAD_FAILED` — aggregate query failed
+
+### `GET /collector/pickup-map-data` (collector)
+
+Available waste listings near the collector's base, for plotting on a pickup
+map. Filtered to the collector's **handled categories** only. Returns at most
+**200 points**, ordered by distance from the collector base. Exact street
+addresses are never exposed — only a district + city `area_summary`. Responses
+are cached for 60 seconds via `Cache-Control: max-age=60`.
+
+**Response:** `PickupMapData`
+
+```json
+{
+  "collector_base": { "latitude": -6.9147, "longitude": 107.6098 },
+  "handled_category_ids": ["a1b2...", "c3d4..."],
+  "points": [
+    {
+      "listing_id": "f5e6...",
+      "category_id": "a1b2...",
+      "category_name": "Plastik PET",
+      "estimated_weight_kg": 12.5,
+      "latitude": -6.9201,
+      "longitude": 107.6175,
+      "distance_km": 0.92,
+      "area_summary": "Coblong, Bandung"
+    }
+  ]
+}
+```
+
+| Field | Notes |
+| ----- | ----- |
+| `collector_base` | From `collector_profiles.base_latitude/base_longitude` (defaults to `0,0` if unset) |
+| `handled_category_ids` | Active categories from `collector_handled_categories`; empty ⇒ no points |
+| `points[]` | `status = available` listings in handled categories, max 200 by distance |
+| `area_summary` | `district, city` only — exact address withheld |
+
+**Errors**
+
+- `401` — missing or invalid auth token
+- `403 INSUFFICIENT_ROLE` — caller is not a collector
+- `500` — aggregate query failed

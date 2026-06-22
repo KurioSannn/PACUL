@@ -1,5 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { estimateCo2SavedKg } from '../../common/config/emission-factors';
 import type {
   PlatformImpactMetrics,
   ReportExportFilters,
@@ -44,6 +45,7 @@ interface RouteAggregateRow {
 interface CategoryRow {
   id: string;
   name: string;
+  code: string | null;
 }
 
 @Injectable()
@@ -62,7 +64,8 @@ export class ReportDataService {
         this.fetchActiveProfileCounts(),
       ]);
 
-    const categories = await this.fetchCategoryMap();
+    const { names: categories, codes: categoryCodes } =
+      await this.fetchCategoryMaps();
 
     let totalWasteSubmittedKg = 0;
     let totalWasteCollectedKg = 0;
@@ -87,13 +90,24 @@ export class ReportDataService {
 
     let totalMaterialProducedKg = 0;
     let totalMaterialSoldKg = 0;
+    const soldWeightByCategoryCode = new Map<string, number>();
+    const producedWeightByCategoryCode = new Map<string, number>();
 
     for (const row of batches) {
       const weight = Number(row.total_weight_kg);
       totalMaterialProducedKg += weight;
+      const code = categoryCodes.get(row.category_id) ?? 'UNKNOWN';
+      producedWeightByCategoryCode.set(
+        code,
+        (producedWeightByCategoryCode.get(code) ?? 0) + weight,
+      );
 
       if (row.status === 'sold') {
         totalMaterialSoldKg += weight;
+        soldWeightByCategoryCode.set(
+          code,
+          (soldWeightByCategoryCode.get(code) ?? 0) + weight,
+        );
       }
     }
 
@@ -122,7 +136,13 @@ export class ReportDataService {
       }
     }
 
-    const totalRecycledKg = totalMaterialSoldKg || totalMaterialProducedKg;
+    const recycledWeightByCategoryCode =
+      totalMaterialSoldKg > 0
+        ? soldWeightByCategoryCode
+        : producedWeightByCategoryCode;
+    const estimatedCo2SavedKg = estimateCo2SavedKg(
+      recycledWeightByCategoryCode,
+    );
 
     return {
       total_waste_submitted_kg: roundWeight(totalWasteSubmittedKg),
@@ -134,7 +154,7 @@ export class ReportDataService {
       total_pickups_completed: totalPickupsCompleted,
       total_route_distance_km: roundDistance(totalRouteDistanceKm),
       total_route_cost_idr: Math.round(totalRouteCostIdr),
-      estimated_co2_saved_kg: roundWeight(totalRecycledKg * 2.5),
+      estimated_co2_saved_kg: roundWeight(estimatedCo2SavedKg),
       estimated_economic_value_idr: Math.round(totalTransactionValueIdr),
       active_households: profiles.households,
       active_collectors: profiles.collectors,
@@ -269,17 +289,30 @@ export class ReportDataService {
     return data ?? [];
   }
 
-  private async fetchCategoryMap(): Promise<Map<string, string>> {
+  private async fetchCategoryMaps(): Promise<{
+    names: Map<string, string>;
+    codes: Map<string, string>;
+  }> {
     const admin = this.supabaseService.getAdminClient();
     const { data, error } = await admin
       .from('waste_categories')
-      .select('id, name');
+      .select('id, name, code');
 
     if (error) {
       throw loadFailed('waste categories for report', error.message);
     }
 
-    return new Map((data ?? []).map((row: CategoryRow) => [row.id, row.name]));
+    const names = new Map<string, string>();
+    const codes = new Map<string, string>();
+
+    for (const row of (data ?? []) as CategoryRow[]) {
+      names.set(row.id, row.name);
+      if (row.code) {
+        codes.set(row.id, row.code);
+      }
+    }
+
+    return { names, codes };
   }
 
   private async fetchActiveProfileCounts(): Promise<{

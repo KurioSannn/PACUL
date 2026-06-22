@@ -159,9 +159,6 @@ export interface DashboardImpactFilters {
   province?: string;
 }
 
-/** kg CO₂ avoided per kg of material sold (platform recycling estimate). */
-export const CO2_SAVED_KG_PER_RECYCLED_KG = 2.5;
-
 export interface PlatformImpactTopCategory {
   category_name: string;
   weight_kg: number;
@@ -180,7 +177,7 @@ export interface PlatformImpact {
   total_route_distance_km: number;
   total_route_cost_idr: number;
   top_categories: PlatformImpactTopCategory[];
-  /** `total_material_sold_kg * CO2_SAVED_KG_PER_RECYCLED_KG` (2.5 kg CO₂ per kg sold). */
+  /** Sum over sold material of `weight_kg × per-category emission factor` (simulated). */
   estimated_co2_saved_kg: number;
   estimated_economic_value_idr: number;
   active_households: number;
@@ -238,4 +235,51 @@ export interface RouteStats {
   total_actual_cost_idr: number;
   average_distance_km: number;
   average_weight_kg: number;
+}
+
+export interface LocalImpactLocation {
+  city: string;
+  province: string | null;
+  total_waste_collected_kg: number;
+  total_material_sold_kg: number;
+  estimated_co2_saved_kg: number;
+  listing_count: number;
+  pickup_count: number;
+}
+
+export interface LocalImpactTotals {
+  total_waste_collected_kg: number;
+  total_material_sold_kg: number;
+  estimated_co2_saved_kg: number;
+  location_count: number;
+}
+
+/** Location-aggregated impact for the local impact map. City-level only. */
+export interface LocalImpact {
+  filters: DashboardImpactFilters;
+  locations: LocalImpactLocation[];
+  totals: LocalImpactTotals;
+}
+
+export interface PickupMapPoint {
+  listing_id: string;
+  category_id: string;
+  category_name: string | null;
+  estimated_weight_kg: number;
+  latitude: number;
+  longitude: number;
+  distance_km: number;
+  /** District + city only; exact address is never exposed. */
+  area_summary: string;
+}
+
+export interface PickupMapData {
+  collector_base: CollectorBasePoint;
+  handled_category_ids: string[];
+  points: PickupMapPoint[];
+}
+
+export interface CollectorBasePoint {
+  latitude: number;
+  longitude: number;
 }

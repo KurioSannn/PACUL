@@ -264,6 +264,37 @@ Default env values: base fee **5,000 IDR**, **2,000 IDR/km**, **300 IDR/kg** han
 
 Nearest-neighbor is fast but **not globally optimal** — acceptable for hackathon MVP route preview and cost estimates.
 
+## Impact & Carbon Assumptions
+
+> **Simulated demo values.** The CO₂ figures below are **not** peer-reviewed
+> life-cycle assessment (LCA) numbers. They are coarse, hand-picked estimates for
+> the hackathon MVP and must not be presented as authoritative carbon accounting.
+
+`estimated_co2_saved_kg` (in `/dashboard/impact`, `/dashboard/local-impact`, and
+report exports) is computed per material category:
+
+```
+estimated_co2_saved_kg = Σ (sold_weight_kg[category] × EMISSION_FACTOR[category_code])
+```
+
+Factors live in `backend/src/common/config/emission-factors.ts`. Categories
+without a mapped code fall back to `DEFAULT_EMISSION_FACTOR` (1.0).
+
+| Category code | Emission factor (kg CO₂e / kg recycled) |
+| ------------- | --------------------------------------- |
+| `ELECTRONICS` | 3.0 |
+| `METAL_CAN` | 2.0 |
+| `PLASTIC_PET` | 1.5 |
+| `PLASTIC_OTHER` | 1.2 |
+| `TEXTILE` | 1.0 |
+| `PAPER` | 0.9 |
+| `ORGANIC` | 0.5 |
+| `GLASS` | 0.3 |
+| _(unmapped)_ | 1.0 (default) |
+
+To tune the model, edit the factor map only — all downstream code reads through
+`getEmissionFactor` / `estimateCo2SavedKg`.
+
 ## Payment / Transaction — SIMULATION ONLY
 
 > **No real payment gateway is integrated.** Transaction endpoints simulate deal completion for demo flows only.

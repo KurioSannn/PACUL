@@ -4,9 +4,11 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import type { AuthUser } from '../../common/types/auth-user';
 import { DashboardService } from './dashboard.service';
+import { GeoImpactService } from './geo-impact.service';
 import type {
   DashboardImpactFilters,
   DashboardSummary,
+  LocalImpact,
   MaterialFlow,
   PlatformImpact,
   RouteStats,
@@ -17,7 +19,10 @@ import { DashboardImpactFiltersDto } from './dto/dashboard-impact-filters.dto';
 @ApiBearerAuth('bearer')
 @Controller('dashboard')
 export class DashboardController {
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(
+    private readonly dashboardService: DashboardService,
+    private readonly geoImpactService: GeoImpactService,
+  ) {}
 
   @Get('summary')
   @Header('Cache-Control', 'max-age=60')
@@ -43,6 +48,18 @@ export class DashboardController {
     @Query() query: DashboardImpactFiltersDto,
   ): Promise<PlatformImpact> {
     return this.dashboardService.getPlatformImpact(mapImpactFilters(query));
+  }
+
+  @Get('local-impact')
+  @Header('Cache-Control', 'max-age=300')
+  @Roles('household', 'collector', 'industry')
+  @ApiOperation({
+    summary: 'Get impact metrics aggregated by city for the impact map',
+  })
+  getLocalImpact(
+    @Query() query: DashboardImpactFiltersDto,
+  ): Promise<LocalImpact> {
+    return this.geoImpactService.getLocalImpact(mapImpactFilters(query));
   }
 
   @Get('material-flow')

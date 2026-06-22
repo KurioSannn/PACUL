@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { estimateCo2SavedKg } from '../../common/config/emission-factors';
 import {
-  CO2_SAVED_KG_PER_RECYCLED_KG,
   type CollectorClaimSummaryItem,
   type CollectorMaterialSummaryItem,
   type CollectorRouteSummaryItem,
@@ -186,7 +186,10 @@ interface ImpactListingRow {
 interface ImpactMaterialBatchRow {
   status: string;
   total_weight_kg: number | string;
-  category: { name: string } | { name: string }[] | null;
+  category:
+    | { name: string; code?: string }
+    | { name: string; code?: string }[]
+    | null;
 }
 
 interface ImpactTransactionRow {
@@ -519,6 +522,7 @@ export class DashboardService {
 
     let totalMaterialProducedKg = 0;
     let totalMaterialSoldKg = 0;
+    const soldWeightByCategoryCode = new Map<string, number>();
 
     for (const row of batchRows) {
       const weightKg = Number(row.total_weight_kg);
@@ -528,6 +532,11 @@ export class DashboardService {
       }
       if (row.status === 'sold') {
         totalMaterialSoldKg += weightKg;
+        const categoryCode = unwrapJoinCode(row.category) ?? 'UNKNOWN';
+        soldWeightByCategoryCode.set(
+          categoryCode,
+          (soldWeightByCategoryCode.get(categoryCode) ?? 0) + weightKg,
+        );
       }
     }
 
@@ -567,8 +576,7 @@ export class DashboardService {
       categoryWeights,
       totalWasteCollectedKg,
     );
-    const estimatedCo2SavedKg =
-      totalMaterialSoldKg * CO2_SAVED_KG_PER_RECYCLED_KG;
+    const estimatedCo2SavedKg = estimateCo2SavedKg(soldWeightByCategoryCode);
 
     return {
       filters,
@@ -1135,7 +1143,8 @@ export class DashboardService {
         status,
         total_weight_kg,
         category:waste_categories (
-          name
+          name,
+          code
         )
       `,
     );
@@ -1431,6 +1440,23 @@ function unwrapJoinName(
   }
 
   return value.name;
+}
+
+function unwrapJoinCode(
+  value:
+    | { name: string; code?: string }
+    | { name: string; code?: string }[]
+    | null,
+): string | null {
+  if (!value) {
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    return value[0]?.code ?? null;
+  }
+
+  return value.code ?? null;
 }
 
 function startOfTodayIso(): string {

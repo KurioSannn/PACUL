@@ -220,6 +220,14 @@ paths:
           description: ""
       tags: &a8
         - Collector
+  /collector/pickup-map-data:
+    get:
+      operationId: CollectorController_getPickupMapData
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a8
   /collector/handled-categories:
     get:
       operationId: CollectorController_getHandledCategories
@@ -386,6 +394,42 @@ paths:
           description: ""
       security: *a10
       summary: Get platform-wide impact metrics with optional filters
+      tags: *a11
+  /dashboard/local-impact:
+    get:
+      operationId: DashboardController_getLocalImpact
+      parameters:
+        - name: from
+          required: false
+          in: query
+          schema:
+            format: date
+            example: 2025-01-01
+            type: string
+        - name: to
+          required: false
+          in: query
+          schema:
+            format: date
+            example: 2025-12-31
+            type: string
+        - name: city
+          required: false
+          in: query
+          schema:
+            example: Surabaya
+            type: string
+        - name: province
+          required: false
+          in: query
+          schema:
+            example: Jawa Timur
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a10
+      summary: Get impact metrics aggregated by city for the impact map
       tags: *a11
   /dashboard/material-flow:
     get:

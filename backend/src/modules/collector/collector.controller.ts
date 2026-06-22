@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   ParseUUIDPipe,
   Post,
@@ -11,6 +12,8 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthUser } from '../../common/types/auth-user';
+import { GeoImpactService } from '../dashboard/geo-impact.service';
+import type { PickupMapData } from '../dashboard/dashboard.types';
 import { CollectorAvailableWasteFiltersDto } from '../waste-listings/dto/collector-available-waste-filters.dto';
 import { ListingService } from '../waste-listings/listing.service';
 import { CollectorService } from './collector.service';
@@ -22,6 +25,7 @@ export class CollectorController {
   constructor(
     private readonly collectorService: CollectorService,
     private readonly listingService: ListingService,
+    private readonly geoImpactService: GeoImpactService,
   ) {}
 
   @Get('available-waste')
@@ -38,6 +42,12 @@ export class CollectorController {
       page: filters.page,
       limit: filters.limit,
     });
+  }
+
+  @Get('pickup-map-data')
+  @Header('Cache-Control', 'max-age=60')
+  getPickupMapData(@CurrentUser() user: AuthUser): Promise<PickupMapData> {
+    return this.geoImpactService.getPickupMapData(user.id);
   }
 
   @Get('handled-categories')
