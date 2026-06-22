@@ -33,24 +33,33 @@ export function MobileNav() {
       </div>
       {open ? (
         <nav className="border-t border-[var(--color-line)] px-2 pb-3" aria-label="Navigasi mobile">
-          {items.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "block rounded-lg px-3 py-2.5 text-sm font-semibold",
-                  active
-                    ? "bg-[var(--color-mint-100)] text-[var(--color-forest-900)]"
-                    : "text-[var(--color-ink-600)]",
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+          {items.map((group, i) => (
+            <div key={i} className="mt-2">
+              {group.title && (
+                <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--color-ink-500)]">
+                  {group.title}
+                </p>
+              )}
+              {group.items.map((item) => {
+                const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "block rounded-lg px-3 py-2 text-sm font-semibold",
+                      active
+                        ? "bg-[var(--color-mint-100)] text-[var(--color-forest-900)]"
+                        : "text-[var(--color-ink-600)]",
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
       ) : null}
     </div>

@@ -11,61 +11,38 @@ export function getPrimaryCta(
     return { href: routes.authRegister, label: "Daftar Gratis" };
   }
   if (role === "household") {
-    return { href: routes.listingsNew, label: "Buat Listing" };
+    return { href: routes.listingsNew, label: "Jual Sampah" };
   }
   if (role === "collector") {
-    return { href: routes.collectorPickups, label: "Pickup Tersedia" };
+    return { href: routes.pickupRoutes, label: "Optimasi Rute" };
   }
-  return { href: routes.marketplaceMaterials, label: "Cari Material" };
+  return { href: routes.ordersNew, label: "Pesan Material" };
 }
 
+/** Public landing header only — not used in authenticated app shell. */
 export function getHeaderNav(
   role: UserRole | undefined,
   isLoggedIn: boolean,
 ): NavLink[] {
   if (!isLoggedIn) {
     return [
-      { href: routes.wasteCategories, label: "Kategori Sampah" },
-      { href: routes.deployReadiness, label: "Status Sistem" },
+      { href: `${routes.home}#alur`, label: "Alur" },
+      { href: routes.marketplace, label: "Marketplace" },
+      { href: routes.demo, label: "Demo" },
       { href: routes.authLogin, label: "Masuk" },
     ];
   }
 
-  const shared: NavLink[] = [
-    { href: role ? (role === "household" ? routes.dashboardHousehold : role === "collector" ? routes.dashboardCollector : routes.dashboardIndustry) : routes.dashboard, label: "Dashboard" },
-    { href: routes.impact, label: "Dampak" },
-    { href: routes.reports, label: "Laporan" },
-  ];
-
-  if (role === "household") {
-    return [
-      ...shared,
-      { href: routes.marketplace, label: "Marketplace" },
-      { href: routes.myMaterials, label: "Listing Saya" },
-      { href: routes.pickupTracking, label: "Status Pickup" },
-    ];
-  }
-
-  if (role === "collector") {
-    return [
-      ...shared,
-      { href: routes.marketplace, label: "Marketplace" },
-      { href: routes.collectorPickups, label: "Pickup" },
-      { href: routes.pickupRoutes, label: "Rute" },
-    ];
-  }
-
   return [
-    ...shared,
     { href: routes.marketplace, label: "Marketplace" },
-    { href: routes.orders, label: "Pesanan" },
-    { href: routes.transactions, label: "Transaksi" },
+    { href: routes.demo, label: "Panduan Demo" },
   ];
 }
 
-export function getSidebarNav(
-  role: UserRole | undefined,
-): NavLink[] {
+export type NavGroup = { title?: string; items: NavLink[] };
+
+/** Sidebar / mobile menu: core workflow per role only. */
+export function getSidebarNav(role: UserRole | undefined): NavGroup[] {
   if (!role) return [];
 
   const dashboard =
@@ -75,51 +52,74 @@ export function getSidebarNav(
         ? routes.dashboardCollector
         : routes.dashboardIndustry;
 
-  const common: NavLink[] = [
-    { href: dashboard, label: "Dashboard" },
-    { href: routes.marketplace, label: "Marketplace" },
-    { href: routes.profile, label: "Profil" },
-    { href: routes.impact, label: "Dashboard Dampak" },
-    { href: routes.reports, label: "Laporan" },
-    { href: routes.notifications, label: "Notifikasi" },
-  ];
-
   if (role === "household") {
     return [
-      ...common.slice(0, 2),
-      { href: routes.listingsNew, label: "Jual Sampah" },
-      { href: routes.myMaterials, label: "Listing Saya" },
-      { href: routes.classificationDemo, label: "Klasifikasi AI" },
-      { href: routes.pickupTracking, label: "Status Pickup" },
-      { href: routes.reviews, label: "Rating" },
-      ...common.slice(2),
-      { href: routes.points, label: "EcoPoints" },
+      {
+        title: "Utama",
+        items: [
+          { href: dashboard, label: "Beranda" },
+        ],
+      },
+      {
+        title: "Penjualan",
+        items: [
+          { href: routes.listingsNew, label: "Jual Sampah (AI)" },
+          { href: routes.myMaterials, label: "Riwayat Jual" },
+          { href: routes.pickupTracking, label: "Status Penjemputan" },
+        ],
+      },
     ];
   }
 
   if (role === "collector") {
     return [
-      ...common.slice(0, 2),
-      { href: routes.collectorHandledCategories, label: "Kategori Ditangani" },
-      { href: routes.collectorPickups, label: "Pickup Tersedia" },
-      { href: routes.pickupRoutes, label: "Rute Pengambilan" },
-      { href: routes.collectorSorting, label: "Pemilahan" },
-      { href: routes.collectorMaterialsNew, label: "Bahan Baku Baru" },
-      { href: routes.negotiations, label: "Negosiasi" },
-      { href: routes.transactions, label: "Transaksi" },
-      ...common.slice(2),
-      { href: routes.points, label: "EcoPoints" },
+      {
+        title: "Utama",
+        items: [
+          { href: dashboard, label: "Beranda" },
+          { href: routes.collectorHandledCategories, label: "Pengaturan Kategori" },
+        ],
+      },
+      {
+        title: "Alur Pengepul",
+        items: [
+          { href: routes.collectorPickups, label: "1. Klaim Sampah RT" },
+          { href: routes.pickupRoutes, label: "2. Peta Rute Pengambilan" },
+          { href: routes.collectorSorting, label: "3. Pilah jadi Bahan Baku" },
+          { href: routes.collectorMaterialsNew, label: "4. Jual ke Industri" },
+        ],
+      },
+      {
+        title: "Transaksi",
+        items: [
+          { href: routes.negotiations, label: "Negosiasi Harga" },
+          { href: routes.transactions, label: "Riwayat Transaksi" },
+        ],
+      },
     ];
   }
 
   return [
-    ...common.slice(0, 2),
-    { href: routes.marketplaceMaterials, label: "Cari Bahan Baku" },
-    { href: routes.orders, label: "Pesanan" },
-    { href: routes.negotiations, label: "Negosiasi" },
-    { href: routes.transactions, label: "Transaksi" },
-    { href: routes.reviews, label: "Rating" },
-    ...common.slice(2),
+    {
+      title: "Utama",
+      items: [
+        { href: dashboard, label: "Beranda" },
+      ],
+    },
+    {
+      title: "Pembelian",
+      items: [
+        { href: routes.marketplaceMaterials, label: "Beli Bahan Baku" },
+        { href: routes.orders, label: "Pesanan Saya" },
+      ],
+    },
+    {
+      title: "Transaksi",
+      items: [
+        { href: routes.negotiations, label: "Negosiasi Harga" },
+        { href: routes.transactions, label: "Riwayat Transaksi" },
+      ],
+    },
   ];
 }
 
