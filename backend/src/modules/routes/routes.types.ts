@@ -35,7 +35,10 @@ export interface RoutePreviewResult {
   totalWeightKg: number;
   costEstimation: CostEstimationResult;
   isPreview: true;
+  estimateId?: string | null;
 }
+
+export type RouteCostEstimateType = 'preview' | 'committed' | 'actual';
 
 export interface PickupRouteStop {
   id: string;

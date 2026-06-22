@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -14,7 +15,10 @@ import type { UserRole } from '../profiles/profiles.types';
 import { TraceabilityService } from '../traceability/traceability.service';
 import { StatusTransitionService } from '../waste-listings/status-transition.service';
 import { SupabaseService } from '../../supabase/supabase.service';
-import { CostEstimationService } from './cost-estimation.service';
+import {
+  CostEstimationService,
+  type CostEstimationResult,
+} from './cost-estimation.service';
 import type { UpdatableRouteStatus } from './dto/update-route-status.dto';
 import type { UpdatableStopStatus } from './dto/update-stop-status.dto';
 import type {
@@ -23,6 +27,7 @@ import type {
   PickupRouteStop,
   PickupRouteStatus,
   PickupRouteStopStatus,
+  RouteCostEstimateType,
   RoutePreviewResult,
   RoutePreviewStop,
 } from './routes.types';
@@ -130,6 +135,8 @@ const STOP_STATUS_TRANSITIONS: Record<
 
 @Injectable()
 export class RouteService {
+  private readonly logger = new Logger('RouteService');
+
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly costEstimationService: CostEstimationService,
@@ -141,7 +148,19 @@ export class RouteService {
     collectorId: string,
     listingIds: string[],
   ): Promise<RoutePreviewResult> {
-    return this.buildRoutePreview(collectorId, listingIds);
+    const preview = await this.buildRoutePreview(collectorId, listingIds);
+
+    const estimateId = await this.saveCostEstimate({
+      routeId: null,
+      collectorId,
+      estimateType: 'preview',
+      totalDistanceKm: preview.totalDistanceKm,
+      totalWeightKg: preview.totalWeightKg,
+      stopCount: preview.orderedStops.length,
+      cost: preview.costEstimation,
+    });
+
+    return { ...preview, estimateId };
   }
 
   async commitRoute(
@@ -171,6 +190,16 @@ export class RouteService {
         code: 'ROUTE_LOAD_FAILED',
       });
     }
+
+    await this.saveCostEstimate({
+      routeId,
+      collectorId,
+      estimateType: 'committed',
+      totalDistanceKm: preview.totalDistanceKm,
+      totalWeightKg: preview.totalWeightKg,
+      stopCount: preview.orderedStops.length,
+      cost: preview.costEstimation,
+    });
 
     this.traceabilityService.emitEvent({
       eventType: 'route_created',
@@ -258,6 +287,25 @@ export class RouteService {
           );
         }
       }
+
+      const activeStopCount = stops.filter(
+        (stop) => stop.status !== 'skipped',
+      ).length;
+      const actualCost = this.costEstimationService.estimatePickupCost({
+        totalDistanceKm: Number(route.total_distance_km),
+        totalWeightKg: Number(route.total_weight_kg ?? 0),
+        stopCount: activeStopCount,
+      });
+
+      await this.saveCostEstimate({
+        routeId,
+        collectorId,
+        estimateType: 'actual',
+        totalDistanceKm: Number(route.total_distance_km),
+        totalWeightKg: Number(route.total_weight_kg ?? 0),
+        stopCount: activeStopCount,
+        cost: actualCost,
+      });
     } else if (newStatus === 'cancelled') {
       await this.persistRouteStatusUpdate(routeId, route.status, {
         status: 'cancelled',
@@ -412,6 +460,46 @@ export class RouteService {
     });
 
     return this.getCollectorRoute(routeId, collectorId);
+  }
+
+  private async saveCostEstimate(params: {
+    routeId: string | null;
+    collectorId: string;
+    estimateType: RouteCostEstimateType;
+    totalDistanceKm: number;
+    totalWeightKg: number;
+    stopCount: number;
+    cost: CostEstimationResult;
+  }): Promise<string | null> {
+    const admin = this.supabaseService.getAdminClient();
+    const { data, error } = await admin
+      .from('route_cost_estimates')
+      .insert({
+        route_id: params.routeId,
+        collector_id: params.collectorId,
+        estimate_type: params.estimateType,
+        total_distance_km: params.totalDistanceKm,
+        total_weight_kg: params.totalWeightKg,
+        stop_count: params.stopCount,
+        base_fee: params.cost.baseFee,
+        distance_cost: params.cost.distanceCost,
+        handling_cost: params.cost.handlingCost,
+        total_cost: params.cost.totalCost,
+        config_snapshot: params.cost.configUsed,
+      })
+      .select('id')
+      .single<{ id: string }>();
+
+    if (error || !data) {
+      this.logger.warn(
+        `Failed to persist ${params.estimateType} route cost estimate: ${
+          error?.message ?? 'unknown error'
+        }`,
+      );
+      return null;
+    }
+
+    return data.id;
   }
 
   private async buildRoutePreview(

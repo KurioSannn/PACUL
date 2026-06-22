@@ -1032,17 +1032,19 @@ Calculates an optimized pickup route and cost estimate without persisting to the
         "handlingCostPerKg": 300
       }
     },
-    "isPreview": true
+    "isPreview": true,
+    "estimateId": "uuid"
   }
 }
 ```
 
 **Rules**
 
-- No database writes; preview only.
+- Persists a `preview` row in `route_cost_estimates` (with `route_id = null`) and returns its `estimateId`. `estimateId` is `null` if the estimate could not be saved (preview still returned).
 - Route uses nearest-neighbor optimization from collector base coordinates.
 - Duration estimate: `round(totalDistanceKm × 3 + stopCount × 10)` minutes.
 - Cost uses `ROUTE_BASE_FEE`, `ROUTE_COST_PER_KM`, and `ROUTE_HANDLING_COST_PER_KG` env values; `totalCost` rounded up to nearest 100 IDR.
+- Committing a route stores a `committed` estimate; completing a route stores an `actual` estimate, both linked to the route.
 
 **Errors**
 
