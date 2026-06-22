@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { EcosystemPartners } from "@/components/home/ecosystem-partners";
 import { PaculHero } from "@/components/home/pacul-hero";
+import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -21,7 +22,7 @@ export default function HomePage() {
       <PaculHero />
       <EcosystemPartners />
 
-      <section className="page-shell section" id="alur" aria-labelledby="flow-title">
+      <section className="landing-shell landing-section" id="alur" aria-labelledby="flow-title">
         <p className="eyebrow">Tiga peran, satu alur material</p>
         <h2 id="flow-title">Foundation memulai dari informasi yang dibutuhkan setiap aktor.</h2>
         <div className="flow-grid">
@@ -32,7 +33,7 @@ export default function HomePage() {
       </section>
 
       <section className="foundation-section" id="foundation">
-        <div className="page-shell">
+        <div className="landing-shell">
           <p className="eyebrow">Komponen dan kontrak awal</p>
           <h2>Data kecil, status jelas, dan komponen siap dipakai ulang.</h2>
           <div className="foundation-grid">
@@ -50,7 +51,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="page-shell section" aria-labelledby="states-title">
+      <section className="landing-shell landing-section" aria-labelledby="states-title">
         <p className="eyebrow">State dasar</p>
         <h2 id="states-title">Fondasi UI menangani kondisi utama sebelum fitur dibangun.</h2>
         <div className="state-grid">
@@ -59,6 +60,8 @@ export default function HomePage() {
           <ErrorState title="Data belum bisa dimuat" description="Periksa koneksi lalu coba lagi." />
         </div>
       </section>
+
+      <PublicFooter />
     </main>
   );
 }
