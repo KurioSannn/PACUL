@@ -6,6 +6,7 @@ import { CategoryMapperService } from './category-mapper';
 import { ClassificationService } from './classification.service';
 import type { WasteClassifier } from './classifier.interface';
 import { InferenceLogger } from './inference-logger';
+import { ModelVersionService } from './model-version.service';
 import { TraceabilityService } from '../traceability/traceability.service';
 
 describe('ClassificationService', () => {
@@ -76,10 +77,14 @@ describe('ClassificationService', () => {
       }),
     } as unknown as ConfigService<EnvironmentVariables, true>;
 
+    const modelVersionService = {
+      getActiveModelVersionId: jest.fn().mockResolvedValue(null),
+    } as unknown as ModelVersionService;
+
     service = new ClassificationService(
       classifier,
       categoryMapper,
-      new InferenceLogger(),
+      new InferenceLogger(supabaseService, modelVersionService),
       { emitEvent: jest.fn() } as unknown as TraceabilityService,
       supabaseService,
       configService,
