@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { MapPin, Route } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { RequireAuth } from "@/components/auth/require-auth";
+import { PickupLeafletMap } from "@/components/map/pickup-leaflet-map";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge, statusToneForWaste } from "@/components/ui/status-badge";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
+import { buildDemoRoutePreview, mergePickupMapData } from "@/data/demo-pickup-map";
 import { useAsyncData } from "@/hooks/use-async-data";
 import {
   commitRoute,
@@ -31,7 +33,8 @@ function parsePreview(preview: Record<string, unknown>) {
   const duration = Number(preview.estimated_duration_minutes ?? preview.estimatedDurationMinutes ?? 0);
   const cost = Number(preview.estimated_cost_idr ?? preview.estimated_cost ?? preview.estimatedCost ?? 0);
   const stops = (preview.stops ?? preview.ordered_stops ?? []) as Array<Record<string, unknown>>;
-  return { distance, duration, cost, stops };
+  const polyline = (preview.polyline ?? []) as Array<[number, number]>;
+  return { distance, duration, cost, stops, polyline };
 }
 
 function CollectorSortingContent() {
@@ -180,6 +183,7 @@ function PickupRoutesContent() {
   const [preview, setPreview] = useState<Record<string, unknown> | null>(null);
   const [routeId, setRouteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [usedDemoPreview, setUsedDemoPreview] = useState(false);
 
   const mapQuery = useAsyncData(
     () => getPickupMapData(accessToken!),
@@ -187,8 +191,50 @@ function PickupRoutesContent() {
     Boolean(accessToken),
   );
 
+  const mapData = useMemo(
+    () => mergePickupMapData(mapQuery.data ?? null),
+    [mapQuery.data],
+  );
+
+  const mapPoints = useMemo(
+    () =>
+      mapData.listings.map((listing) => ({
+        id: listing.id,
+        title: listing.title,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        subtitle: `${listing.district ?? listing.city ?? "Surabaya"} · ${formatWeight(listing.estimated_weight_kg)}`,
+        selected: selected.includes(listing.id),
+      })),
+    [mapData.listings, selected],
+  );
+
+  const parsed = preview ? parsePreview(preview) : null;
+
+  const orderedMapPoints = useMemo(() => {
+    if (!parsed?.stops.length) return mapPoints;
+    return parsed.stops.map((stop, index) => {
+      const lat = Number(stop.latitude ?? 0);
+      const lng = Number(stop.longitude ?? 0);
+      const title = String(stop.title ?? `Titik ${index + 1}`);
+      const matched = mapData.listings.find(
+        (l) => l.title === title || (Math.abs(l.latitude - lat) < 0.0001 && Math.abs(l.longitude - lng) < 0.0001),
+      );
+      return {
+        id: matched?.id ?? `stop-${index}`,
+        title,
+        latitude: lat || matched?.latitude || mapData.collector_base.latitude,
+        longitude: lng || matched?.longitude || mapData.collector_base.longitude,
+        subtitle: String(stop.address ?? ""),
+        order: index + 1,
+      };
+    });
+  }, [parsed?.stops, mapPoints, mapData]);
+
   const toggleListing = (id: string) => {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setPreview(null);
+    setUsedDemoPreview(false);
   };
 
   const runPreview = async () => {
@@ -200,9 +246,13 @@ function PickupRoutesContent() {
     try {
       const result = await previewRoute(accessToken, selected);
       setPreview(result);
+      setUsedDemoPreview(false);
       pushToast("Pratinjau rute siap.", "success");
-    } catch (err) {
-      pushToast(err instanceof Error ? err.message : "Gagal preview rute.", "error");
+    } catch {
+      const demo = buildDemoRoutePreview(selected, mapData.listings);
+      setPreview(demo as unknown as Record<string, unknown>);
+      setUsedDemoPreview(true);
+      pushToast("Pratinjau rute (nearest-neighbor demo) — estimasi jarak & biaya.", "success");
     } finally {
       setIsLoading(false);
     }
@@ -210,6 +260,10 @@ function PickupRoutesContent() {
 
   const commit = async () => {
     if (!accessToken || selected.length === 0) return;
+    if (mapData.isDemoFallback || selected.some((id) => id.startsWith("demo-"))) {
+      pushToast("Data demo: buat listing nyata di backend untuk menyimpan rute permanen.", "error");
+      return;
+    }
     setIsLoading(true);
     try {
       const route = await commitRoute(accessToken, selected);
@@ -222,14 +276,25 @@ function PickupRoutesContent() {
     }
   };
 
-  const parsed = preview ? parsePreview(preview) : null;
-
   return (
     <main className="page-shell grow space-y-6 py-8">
       <PageHeader
         eyebrow="Pengepul"
-        title="Rute Pengambilan"
-        description="Pilih titik pickup di peta, lihat pratinjau jarak dan biaya, lalu buat rute pengambilan."
+        title="Peta & Rute Pengambilan Optimal"
+        description="Pilih titik pickup di peta OpenStreetMap, optimasi urutan nearest-neighbor, lihat estimasi jarak & biaya."
+      />
+
+      {mapData.isDemoFallback ? (
+        <p className="rounded-xl border border-dashed border-[var(--color-leaf-600)] bg-[var(--color-mint-50)] px-4 py-3 text-sm text-[var(--color-ink-600)]">
+          Menampilkan data demo Surabaya karena belum ada listing pickup dari API. Pratinjau rute & peta tetap bisa dicoba.
+        </p>
+      ) : null}
+
+      <PickupLeafletMap
+        base={mapData.collector_base}
+        points={parsed ? orderedMapPoints : mapPoints}
+        routePolyline={parsed?.polyline}
+        height={400}
       />
 
       <section className="grid gap-6 lg:grid-cols-2">
@@ -239,7 +304,7 @@ function PickupRoutesContent() {
             Titik pickup ({selected.length} dipilih)
           </h2>
           <ul className="mt-4 max-h-80 space-y-2 overflow-y-auto">
-            {(mapQuery.data?.listings ?? []).map((listing) => (
+            {mapData.listings.map((listing) => (
               <li key={listing.id}>
                 <label className="flex items-start gap-3 rounded-lg border p-3 text-sm hover:bg-[var(--color-sage-50)]">
                   <input type="checkbox" checked={selected.includes(listing.id)} onChange={() => toggleListing(listing.id)} className="mt-1" />
@@ -248,6 +313,7 @@ function PickupRoutesContent() {
                     <br />
                     <span className="text-[var(--color-ink-500)]">
                       {listing.district ?? listing.city ?? "Lokasi"} · {formatWeight(listing.estimated_weight_kg)}
+                      {listing.distance_km != null ? ` · ${listing.distance_km.toFixed(1)} km` : ""}
                     </span>
                   </span>
                 </label>
@@ -256,10 +322,10 @@ function PickupRoutesContent() {
           </ul>
           <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" disabled={isLoading} onClick={() => void runPreview()} className="rounded-full border px-4 py-2 text-sm font-semibold disabled:opacity-60">
-              Pratinjau rute
+              {isLoading ? "Menghitung..." : "Optimasi & pratinjau rute"}
             </button>
-            <button type="button" disabled={isLoading} onClick={() => void commit()} className="rounded-full bg-[var(--color-leaf-600)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
-              Buat rute
+            <button type="button" disabled={isLoading || usedDemoPreview} onClick={() => void commit()} className="rounded-full bg-[var(--color-leaf-600)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+              Simpan rute
             </button>
           </div>
         </div>
@@ -267,10 +333,15 @@ function PickupRoutesContent() {
         <div className="rounded-2xl border bg-white p-6 shadow-sm">
           <h2 className="flex items-center gap-2 font-semibold">
             <Route className="size-5 text-[var(--color-leaf-700)]" />
-            Pratinjau rute
+            Pratinjau rute tercepat
           </h2>
           {parsed ? (
             <div className="mt-4 space-y-4">
+              {usedDemoPreview ? (
+                <p className="rounded-lg bg-[var(--color-amber-100)] px-3 py-2 text-xs text-[var(--color-earth-700)]">
+                  Estimasi algoritmik nearest-neighbor + haversine (fallback demo).
+                </p>
+              ) : null}
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="rounded-xl bg-[var(--color-sage-50)] p-3">
                   <p className="text-xs uppercase text-[var(--color-ink-500)]">Jarak</p>
@@ -288,13 +359,16 @@ function PickupRoutesContent() {
               <ol className="space-y-2">
                 {parsed.stops.map((stop, i) => (
                   <li key={i} className="rounded-lg bg-[var(--color-sage-50)] px-3 py-2 text-sm">
+                    <span className="mr-2 inline-flex size-6 items-center justify-center rounded-full bg-[var(--color-leaf-600)] text-xs font-bold text-white">
+                      {i + 1}
+                    </span>
                     {String(stop.title ?? stop.address ?? `Titik ${i + 1}`)}
                   </li>
                 ))}
               </ol>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-[var(--color-ink-500)]">Pilih listing lalu klik pratinjau rute.</p>
+            <p className="mt-4 text-sm text-[var(--color-ink-500)]">Centang titik di daftar, lalu klik optimasi rute.</p>
           )}
           {routeId ? (
             <Link href={routes.pickupDetail(routeId)} className="mt-4 inline-flex rounded-full bg-[var(--color-forest-900)] px-4 py-2 text-sm font-semibold text-white">

@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { MapPin, Route } from "lucide-react";
+import { useMemo } from "react";
 
 import { RequireAuth } from "@/components/auth/require-auth";
+import { PickupLeafletMap } from "@/components/map/pickup-leaflet-map";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
+import { DEMO_COLLECTOR_BASE, DEMO_PICKUP_LISTINGS } from "@/data/demo-pickup-map";
 import { useAsyncData } from "@/hooks/use-async-data";
 import { getRoute, updateRouteStatus } from "@/lib/api";
 import { routeStatusLabels } from "@/lib/labels";
@@ -21,6 +24,8 @@ type RouteStop = {
   address?: string;
   listing_id?: string;
   estimated_weight_kg?: number;
+  latitude?: number;
+  longitude?: number;
 };
 
 function PickupRouteDetailContent() {
@@ -47,10 +52,36 @@ function PickupRouteDetailContent() {
   };
 
   const route = routeQuery.data;
+  const stops = ((route as { stops?: RouteStop[] } | undefined)?.stops ?? []) as RouteStop[];
+
+  const mapConfig = useMemo(() => {
+    const base = DEMO_COLLECTOR_BASE;
+    const resolvedStops = stops.map((stop, index) => {
+      const demoMatch =
+        DEMO_PICKUP_LISTINGS.find((l) => l.id === stop.listing_id || l.title === stop.title) ?? null;
+      return {
+        id: stop.listing_id ?? `stop-${index}`,
+        title: stop.title ?? `Titik ${index + 1}`,
+        latitude: stop.latitude ?? demoMatch?.latitude ?? base.latitude + (index + 1) * 0.008,
+        longitude: stop.longitude ?? demoMatch?.longitude ?? base.longitude + (index + 1) * 0.008,
+        subtitle: stop.address,
+        order: stop.sequence ?? index + 1,
+      };
+    });
+
+    const polyline: Array<[number, number]> = [[base.latitude, base.longitude]];
+    for (const stop of resolvedStops) {
+      polyline.push([stop.latitude, stop.longitude]);
+    }
+    if (resolvedStops.length > 0) {
+      polyline.push([base.latitude, base.longitude]);
+    }
+
+    return { base, points: resolvedStops, polyline };
+  }, [stops]);
+
   if (routeQuery.isLoading) return <p className="page-shell py-8 text-sm">Memuat rute...</p>;
   if (!route) return <p className="page-shell py-8 text-sm">Rute tidak ditemukan.</p>;
-
-  const stops = (route as { stops?: RouteStop[] }).stops ?? [];
 
   return (
     <main className="page-shell grow space-y-6 py-8">
@@ -60,6 +91,10 @@ function PickupRouteDetailContent() {
         backHref={routes.pickupRoutes}
         backLabel="Daftar Rute"
       />
+
+      {stops.length > 0 ? (
+        <PickupLeafletMap base={mapConfig.base} points={mapConfig.points} routePolyline={mapConfig.polyline} height={360} />
+      ) : null}
 
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border bg-white p-5 shadow-sm">
@@ -77,9 +112,15 @@ function PickupRouteDetailContent() {
       </section>
 
       <div className="flex flex-wrap gap-3">
-        <button type="button" onClick={() => void advanceStatus("ongoing")} className="rounded-full border px-4 py-2 text-sm font-semibold">Mulai rute</button>
-        <button type="button" onClick={() => void advanceStatus("completed")} className="rounded-full bg-[var(--color-leaf-600)] px-4 py-2 text-sm font-semibold text-white">Tandai selesai</button>
-        <Link href={routes.collectorSorting} className="rounded-full border px-4 py-2 text-sm font-semibold">Lanjut pemilahan</Link>
+        {route.status === "planned" ? (
+          <button type="button" onClick={() => void advanceStatus("ongoing")} className="rounded-full bg-[var(--color-leaf-600)] px-4 py-2 text-sm font-semibold text-white">Mulai rute</button>
+        ) : null}
+        {route.status === "ongoing" ? (
+          <button type="button" onClick={() => void advanceStatus("completed")} className="rounded-full bg-[var(--color-leaf-600)] px-4 py-2 text-sm font-semibold text-white">Tandai selesai</button>
+        ) : null}
+        {route.status === "completed" ? (
+          <Link href={routes.collectorSorting} className="rounded-full bg-[var(--color-forest-900)] px-4 py-2 text-sm font-semibold text-white">Lanjut pemilahan</Link>
+        ) : null}
       </div>
 
       <section className="rounded-2xl border bg-white p-6 shadow-sm">
