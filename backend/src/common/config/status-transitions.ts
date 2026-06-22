@@ -8,7 +8,7 @@ export const WASTE_LISTING_STATUS_TRANSITIONS: Record<
 > = {
   draft: ['available', 'cancelled'],
   available: ['claimed', 'cancelled'],
-  claimed: ['pickup_planned', 'cancelled'],
+  claimed: ['pickup_planned', 'picked_up', 'cancelled'],
   pickup_planned: ['picked_up', 'cancelled'],
   picked_up: ['sorting'],
   sorting: ['sorted'],

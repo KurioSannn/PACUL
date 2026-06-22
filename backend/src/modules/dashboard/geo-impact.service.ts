@@ -174,7 +174,7 @@ export class GeoImpactService {
       };
     }
 
-    const listings = await this.fetchMapListings(handledCategoryIds);
+    const listings = await this.fetchMapListings(handledCategoryIds, collectorId);
 
     const points: PickupMapPoint[] = listings
       .map((row) => {
@@ -296,6 +296,7 @@ export class GeoImpactService {
 
   private async fetchMapListings(
     categoryIds: string[],
+    collectorId: string,
   ): Promise<MapListingRow[]> {
     const admin = this.supabaseService.getAdminClient();
     const { data, error } = await admin
@@ -314,7 +315,8 @@ export class GeoImpactService {
         )
       `,
       )
-      .eq('status', MAP_AVAILABLE_STATUS)
+      .eq('status', 'claimed')
+      .eq('claimed_by', collectorId)
       .in('category_id', categoryIds);
 
     if (error) {

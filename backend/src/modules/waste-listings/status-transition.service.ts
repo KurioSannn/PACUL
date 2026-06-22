@@ -81,7 +81,7 @@ const COLLECTOR_ALLOWED_TRANSITIONS: Partial<
   Record<WasteListingStatus, readonly WasteListingStatus[]>
 > = {
   available: ['claimed'],
-  claimed: ['pickup_planned', 'cancelled'],
+  claimed: ['pickup_planned', 'picked_up', 'cancelled'],
   pickup_planned: ['picked_up', 'cancelled'],
   picked_up: ['sorting'],
   sorting: ['sorted'],

@@ -118,7 +118,7 @@ const ROUTE_STATUS_TRANSITIONS: Record<
   PickupRouteStatus,
   readonly PickupRouteStatus[]
 > = {
-  planned: ['ongoing', 'cancelled'],
+  planned: ['ongoing', 'completed', 'cancelled'],
   ongoing: ['completed', 'cancelled'],
   completed: [],
   cancelled: [],
@@ -665,6 +665,13 @@ export class RouteService {
         details: { listingId },
       });
     }
+
+    await this.statusTransitionService.transitionListingStatus(
+      listingId,
+      'pickup_planned',
+      collectorId,
+      'collector',
+    );
   }
 
   private async fetchRouteRow(routeId: string): Promise<PickupRouteRow | null> {
