@@ -23,6 +23,7 @@ export const routes = {
   collectorMaterialsNew: "/collector/materials/new",
   orders: "/orders",
   ordersNew: "/orders/new",
+  checkout: "/checkout",
   negotiations: "/negotiations",
   negotiationDetail: (id: string) => `/negotiations/${id}`,
   negotiationChat: (id: string) => `/negotiations/${id}/chat`,
