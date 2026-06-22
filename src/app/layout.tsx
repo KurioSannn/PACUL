@@ -11,6 +11,9 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 export const metadata: Metadata = {
   title: "Pacul | Frontend Foundation",
   description: "Fondasi frontend Pacul untuk marketplace material daur ulang tiga lapis.",
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
