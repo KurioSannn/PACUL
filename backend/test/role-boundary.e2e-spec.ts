@@ -111,7 +111,8 @@ const FORBIDDEN_CASES: BoundaryCase[] = [
     role: 'collector',
   },
   {
-    description: 'household cannot read a negotiation (industry/collector only)',
+    description:
+      'household cannot read a negotiation (industry/collector only)',
     method: 'get',
     path: `/negotiations/${TEST_UUID}`,
     role: 'household',

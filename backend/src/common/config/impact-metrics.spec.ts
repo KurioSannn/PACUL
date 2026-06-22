@@ -59,9 +59,7 @@ describe('estimateCo2SavedKg', () => {
       if (entry.db_category_code === null) {
         continue;
       }
-      const result = estimateCo2SavedKg(
-        new Map([[entry.db_category_code, 1]]),
-      );
+      const result = estimateCo2SavedKg(new Map([[entry.db_category_code, 1]]));
       expect(result).toBeGreaterThan(0);
     }
   });
