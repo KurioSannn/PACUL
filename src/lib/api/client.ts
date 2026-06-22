@@ -33,7 +33,20 @@ type RequestOptions = {
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined | null>;
   formData?: FormData;
+  /** Internal: skip one retry after token refresh */
+  _retried?: boolean;
 };
+
+let tokenRefresher: (() => Promise<string | null>) | null = null;
+let onAuthExpired: (() => void) | null = null;
+
+export function registerAuthTokenHandlers(handlers: {
+  refreshToken: () => Promise<string | null>;
+  onExpired: () => void;
+}) {
+  tokenRefresher = handlers.refreshToken;
+  onAuthExpired = handlers.onExpired;
+}
 
 function buildQuery(query?: RequestOptions["query"]): string {
   if (!query) return "";
@@ -46,11 +59,15 @@ function buildQuery(query?: RequestOptions["query"]): string {
   return serialized ? `?${serialized}` : "";
 }
 
+function isAuthError(status: number, code: string): boolean {
+  return status === 401 || code === "AUTH_REQUIRED";
+}
+
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", token, body, query, formData } = options;
+  const { method = "GET", token, body, query, formData, _retried = false } = options;
   const headers: Record<string, string> = {};
 
   if (token) {
@@ -94,6 +111,28 @@ export async function apiRequest<T>(
             error: `HTTP ${response.status}`,
             code: "HTTP_ERROR",
           } satisfies ApiErrorResponse);
+
+    if (
+      token &&
+      !_retried &&
+      tokenRefresher &&
+      isAuthError(response.status, errorBody.code)
+    ) {
+      const freshToken = await tokenRefresher();
+      if (freshToken && freshToken !== token) {
+        return apiRequest<T>(path, { ...options, token: freshToken, _retried: true });
+      }
+      onAuthExpired?.();
+    }
+
+    if (isAuthError(response.status, errorBody.code)) {
+      throw new ApiError(
+        "Sesi login habis atau token tidak valid. Silakan masuk kembali.",
+        errorBody.code,
+        response.status,
+        errorBody.details,
+      );
+    }
 
     throw new ApiError(
       errorBody.error,

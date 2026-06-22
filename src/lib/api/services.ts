@@ -19,6 +19,7 @@ import type {
   PaginatedMaterialMarketplace,
   PaginatedWasteListings,
   PickupClaim,
+  PickupMapApiResponse,
   PickupRoute,
   PlatformImpact,
   PointsSummary,
@@ -167,10 +168,7 @@ export function getCollectorAvailableWaste(
 }
 
 export function getPickupMapData(token: Token) {
-  return apiRequest<{
-    collector_base: { latitude: number; longitude: number; label: string };
-    listings: CollectorAvailableWasteListing[];
-  }>("/collector/pickup-map-data", { token });
+  return apiRequest<PickupMapApiResponse>("/collector/pickup-map-data", { token });
 }
 
 export function getHandledCategories(token: Token) {
@@ -466,6 +464,24 @@ export function classifyWaste(token: Token, imagePath: string) {
   });
 }
 
+export function classifyWasteClient(
+  token: Token,
+  body: {
+    imagePath: string;
+    top_class: string;
+    confidence: number;
+    model_version: string;
+    inference_time_ms: number;
+    top_k: Array<{ class: string; confidence: number; label?: string }>;
+  },
+) {
+  return apiRequest<AiClassificationResult>("/ai/classify-waste/client", {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
 export function getClassification(token: Token, id: string) {
   return apiRequest<AiClassificationResult>(`/ai/classifications/${id}`, { token });
 }
@@ -526,13 +542,13 @@ export function getMyPoints(token: Token) {
 // --- Traceability ---
 
 export function getMaterialTraceability(token: Token, batchId: string) {
-  return apiRequest<TraceabilityEvent[]>(`/traceability/material/${batchId}`, {
+  return apiRequest<{ batchEvents: TraceabilityEvent[] }>(`/traceability/material/${batchId}`, {
     token,
   });
 }
 
 export function getWasteTraceability(token: Token, listingId: string) {
-  return apiRequest<TraceabilityEvent[]>(`/traceability/waste/${listingId}`, {
+  return apiRequest<{ events: TraceabilityEvent[] }>(`/traceability/waste/${listingId}`, {
     token,
   });
 }

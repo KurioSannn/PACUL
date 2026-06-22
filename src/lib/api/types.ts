@@ -74,6 +74,25 @@ export interface PaginatedWasteListings {
   total: number;
 }
 
+export interface PickupMapApiPoint {
+  listing_id: string;
+  category_id: string;
+  category_name: string | null;
+  estimated_weight_kg: number;
+  latitude: number;
+  longitude: number;
+  distance_km: number;
+  area_summary: string;
+}
+
+export interface PickupMapApiResponse {
+  collector_base: { latitude: number; longitude: number; label?: string };
+  handled_category_ids?: string[];
+  points?: PickupMapApiPoint[];
+  /** Legacy shape — not returned by current backend */
+  listings?: CollectorAvailableWasteListing[];
+}
+
 export interface CollectorAvailableWasteListing {
   id: string;
   title: string;
