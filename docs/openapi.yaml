@@ -103,6 +103,20 @@ paths:
           description: ""
       tags: &a4
         - Ai
+  /ai/classify-waste/client:
+    post:
+      operationId: AiController_classifyWasteFromClient
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassifyWasteClientDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a4
   /ai/model-version:
     get:
       operationId: AiController_getModelVersion
@@ -1276,6 +1290,9 @@ components:
       description: Supabase access token from sign-in
   schemas:
     ClassifyWasteDto:
+      type: object
+      properties: {}
+    ClassifyWasteClientDto:
       type: object
       properties: {}
     OverrideClassificationDto:

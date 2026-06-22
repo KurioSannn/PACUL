@@ -17,6 +17,7 @@ import type { AuthUser } from '../../common/types/auth-user';
 import { ClassificationService } from './classification.service';
 import { ModelVersionService } from './model-version.service';
 import { ClassifyWasteDto } from './dto/classify-waste.dto';
+import { ClassifyWasteClientDto } from './dto/classify-waste-client.dto';
 import { OverrideClassificationDto } from './dto/override-classification.dto';
 
 @Controller('ai')
@@ -38,6 +39,27 @@ export class AiController {
       user.id,
       dto.imagePath,
     );
+  }
+
+  @Post('classify-waste/client')
+  @Throttle({
+    default: {
+      limit: THROTTLE_LIMITS.aiClassifyPerMinute,
+      ttl: THROTTLE_TTL.oneMinuteMs,
+    },
+  })
+  classifyWasteFromClient(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ClassifyWasteClientDto,
+  ) {
+    return this.classificationService.classifyWasteFromClient(user.id, {
+      imagePath: dto.imagePath,
+      top_class: dto.top_class,
+      confidence: dto.confidence,
+      model_version: dto.model_version,
+      inference_time_ms: dto.inference_time_ms,
+      top_k: dto.top_k,
+    });
   }
 
   @Public()

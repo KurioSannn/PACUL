@@ -184,6 +184,89 @@ export class ClassificationService {
     return this.toResponse(mappedRow, category, lowConfidence);
   }
 
+  /** Persist hasil inference TensorFlow.js di browser (bukan mock hash). */
+  async classifyWasteFromClient(
+    userId: string,
+    input: {
+      imagePath: string;
+      top_class: string;
+      confidence: number;
+      model_version: string;
+      inference_time_ms: number;
+      top_k: Array<{ class: string; confidence: number; label?: string }>;
+    },
+  ): Promise<ClassificationResponse> {
+    const bucketName = this.getWasteImagesBucket();
+    assertWasteImageOwnership(input.imagePath, userId, bucketName);
+
+    const category = await this.categoryMapper.mapAIClassToDBCategory(
+      input.top_class,
+    );
+    const topKResults = await Promise.all(
+      input.top_k.map(async (entry) => ({
+        class: entry.class,
+        confidence: entry.confidence,
+        label: entry.label ?? entry.class,
+        category: await this.categoryMapper.mapAIClassToDBCategory(entry.class),
+      })),
+    );
+    const lowConfidence = input.confidence < 0.45 || input.top_class === 'unknown';
+
+    const admin = this.supabaseService.getAdminClient();
+    const { data, error } = await admin
+      .from('ai_classifications')
+      .insert({
+        user_id: userId,
+        image_path: input.imagePath,
+        top_class: input.top_class,
+        confidence: input.confidence,
+        top_k_results: topKResults.map((entry) => ({
+          class: entry.class,
+          confidence: entry.confidence,
+          label: entry.label,
+          category_id: entry.category?.id ?? null,
+        })),
+        db_category_id: category?.id ?? null,
+        is_mock: false,
+        model_version: input.model_version,
+        inference_time_ms: input.inference_time_ms,
+      })
+      .select(
+        'id, user_id, image_path, top_class, confidence, top_k_results, db_category_id, is_mock, model_version, inference_time_ms, is_overridden, override_category_id, override_reason, overridden_at, overridden_by, created_at',
+      )
+      .single<AiClassificationRow>();
+
+    if (error || !data) {
+      throw new InternalServerErrorException({
+        error: 'Failed to persist client AI classification result',
+        code: 'CLASSIFICATION_PERSIST_FAILED',
+        details: error?.message,
+      });
+    }
+
+    const mappedRow = this.mapRow(data);
+
+    this.traceabilityService.emitEvent({
+      eventType: 'ai_classified',
+      entityType: 'ai_classification',
+      entityId: mappedRow.id,
+      actorId: userId,
+      actorRole: 'household',
+      metadata: {
+        imagePath: input.imagePath,
+        topClass: mappedRow.top_class,
+        confidence: mappedRow.confidence,
+        categoryId: mappedRow.db_category_id,
+        isMock: false,
+        modelVersion: mappedRow.model_version,
+        lowConfidence,
+        source: 'client-tensorflowjs',
+      },
+    });
+
+    return this.toResponse(mappedRow, category, lowConfidence);
+  }
+
   async getClassification(
     id: string,
     userId: string,
