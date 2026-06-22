@@ -9,7 +9,7 @@ const partnerSlots = [
 
 export function EcosystemPartners() {
   return (
-    <section className="border-b border-[var(--color-line)] bg-white" aria-labelledby="ecosystem-title">
+    <section className="border-t border-border bg-white" aria-labelledby="ecosystem-title">
       <div className="landing-shell py-10 sm:py-12">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:items-center">
           <div>
