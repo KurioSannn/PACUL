@@ -24,7 +24,11 @@ export class MaterialsMarketController {
     @Param('batchId', ParseUUIDPipe) batchId: string,
     @Body() dto: PublishToMarketDto,
   ) {
-    return this.materialBatchService.publishToMarketplace(batchId, user.id, dto);
+    return this.materialBatchService.publishToMarketplace(
+      batchId,
+      user.id,
+      dto,
+    );
   }
 
   @Patch('market/:listingId')
