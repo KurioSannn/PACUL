@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/auth-context";
+import { appConfig } from "@/lib/config";
 import type { UserRole } from "@/lib/api/types";
 import { getDashboardPath } from "@/lib/navigation";
 import { routes } from "@/lib/routes";
@@ -19,6 +20,8 @@ export function RequireAuth({ children, roles, fallback }: RequireAuthProps) {
   const { isLoading, accessToken, profile, isConfigured } = useAuth();
 
   useEffect(() => {
+    if (appConfig.devBypassAuth) return;
+
     if (isLoading) return;
     if (!isConfigured || !accessToken) {
       router.replace(routes.authLogin);
@@ -32,6 +35,19 @@ export function RequireAuth({ children, roles, fallback }: RequireAuthProps) {
       router.replace(getDashboardPath(profile.role));
     }
   }, [isLoading, accessToken, profile, roles, router, isConfigured]);
+
+  if (appConfig.devBypassAuth) {
+    if (isLoading) {
+      return (
+        fallback ?? (
+          <div className="flex min-h-[40vh] items-center justify-center text-sm text-[var(--color-ink-600)]">
+            Memuat dev session...
+          </div>
+        )
+      );
+    }
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return (

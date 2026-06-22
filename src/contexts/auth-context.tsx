@@ -10,10 +10,18 @@ import {
   type ReactNode,
 } from "react";
 
-import { ApiError } from "@/lib/api/client";
+import { ApiError, registerAuthTokenHandlers } from "@/lib/api/client";
 import { completeProfile, getMe } from "@/lib/api/services";
 import type { MeResponse, UserRole } from "@/lib/api/types";
 import { appConfig } from "@/lib/config";
+import {
+  createDevFallbackProfile,
+  DEV_DEMO_CREDENTIALS,
+  getDevRole,
+  setDevRole,
+} from "@/lib/dev-auth-bypass";
+import { getFreshAccessToken, validateAndRefreshSession } from "@/lib/supabase/session";
+import { routes } from "@/lib/routes";
 
 type AuthUser = {
   id: string;
@@ -60,6 +68,7 @@ type AuthContextValue = {
     payload: Record<string, unknown>,
   ) => Promise<MeResponse>;
   clearError: () => void;
+  switchDevRole?: (role: UserRole) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -84,6 +93,7 @@ const defaultAuthContext: AuthContextValue = {
     throw new Error("Auth belum siap. Muat ulang halaman.");
   },
   clearError: () => {},
+  switchDevRole: undefined,
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -95,16 +105,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const accessToken = session?.access_token ?? null;
 
   const refreshProfile = useCallback(async (): Promise<MeResponse | null> => {
-    if (!accessToken) {
+    const token = await getFreshAccessToken();
+    if (!token) {
       setProfile(null);
       return null;
     }
 
+    if (token !== accessToken) {
+      setSession((prev) =>
+        prev ? { ...prev, access_token: token } : prev,
+      );
+    }
+
     try {
-      const me = await getMe(accessToken);
+      const me = await getMe(token);
       setProfile(me);
       return me;
     } catch (err) {
+      if (appConfig.devBypassAuth) {
+        const fallback = createDevFallbackProfile(getDevRole());
+        setProfile(fallback);
+        return fallback;
+      }
+      if (err instanceof ApiError && (err.status === 401 || err.code === "AUTH_REQUIRED")) {
+        const supabase = await getSupabase();
+        await supabase.auth.signOut();
+        setSession(null);
+        setProfile(null);
+        setError("Sesi login habis. Silakan masuk kembali.");
+        return null;
+      }
       if (err instanceof ApiError && err.code === "PROFILE_MISSING") {
         setProfile(null);
         return null;
@@ -114,6 +144,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [accessToken]);
 
   useEffect(() => {
+    registerAuthTokenHandlers({
+      refreshToken: getFreshAccessToken,
+      onExpired: () => {
+        if (appConfig.devBypassAuth) return;
+        void (async () => {
+          const supabase = await getSupabase();
+          await supabase.auth.signOut();
+          setSession(null);
+          setProfile(null);
+          setError("Sesi login habis. Silakan masuk kembali.");
+          if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {
+            window.location.href = `${routes.authLogin}?expired=1`;
+          }
+        })();
+      },
+    });
+  }, []);
+
+  const devAutoSignIn = useCallback(async (role: UserRole) => {
+    const creds = DEV_DEMO_CREDENTIALS[role];
+    if (!appConfig.isSupabaseConfigured) {
+      setSession({
+        access_token: "dev-bypass-token",
+        user: { id: `dev-bypass-${role}`, email: creds.email },
+      });
+      setProfile(createDevFallbackProfile(role));
+      return;
+    }
+
+    const supabase = await getSupabase();
+    await supabase.auth.signOut();
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: creds.email,
+      password: creds.password,
+    });
+
+    if (signInError || !data.session) {
+      setSession({
+        access_token: "dev-bypass-token",
+        user: { id: `dev-bypass-${role}`, email: creds.email },
+      });
+      setProfile(createDevFallbackProfile(role));
+      return;
+    }
+
+    setSession(normalizeSession(data.session));
+
+    try {
+      const me = await getMe(data.session.access_token);
+      setProfile(me);
+    } catch {
+      setProfile(createDevFallbackProfile(role));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (appConfig.devBypassAuth) {
+      let active = true;
+      void devAutoSignIn(getDevRole()).finally(() => {
+        if (active) setIsLoading(false);
+      });
+      return () => {
+        active = false;
+      };
+    }
+
     if (!appConfig.isSupabaseConfigured) {
       setIsLoading(false);
       return;
@@ -125,13 +221,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void getSupabase().then((supabase) => {
       if (!active) return;
 
-      void supabase.auth.getSession().then(({ data }) => {
+      void validateAndRefreshSession().then(async ({ accessToken: token, signedOut }) => {
         if (!active) return;
-        setSession(normalizeSession(data.session));
+        if (signedOut || !token) {
+          setSession(null);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: userData } = await supabase.auth.getUser();
+        if (!active) return;
+
+        if (!userData.user) {
+          await supabase.auth.signOut();
+          setSession(null);
+        } else {
+          setSession({
+            access_token: token,
+            user: {
+              id: userData.user.id,
+              email: userData.user.email ?? undefined,
+            },
+          });
+        }
         setIsLoading(false);
       });
 
-      subscription = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      subscription = supabase.auth.onAuthStateChange((event, nextSession) => {
+        if (event === "SIGNED_OUT") {
+          setSession(null);
+          setProfile(null);
+          return;
+        }
         setSession(normalizeSession(nextSession));
       }).data.subscription;
     });
@@ -140,7 +261,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [devAutoSignIn]);
+
+  const switchDevRole = useCallback(
+    async (role: UserRole) => {
+      if (!appConfig.devBypassAuth) return;
+      setDevRole(role);
+      setIsLoading(true);
+      setError(null);
+      try {
+        await devAutoSignIn(role);
+        setProfile(null);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [devAutoSignIn],
+  );
 
   useEffect(() => {
     if (!accessToken) {
@@ -230,6 +367,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       completeOnboarding,
       clearError: () => setError(null),
+      switchDevRole: appConfig.devBypassAuth ? switchDevRole : undefined,
     }),
     [
       session,
@@ -242,6 +380,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       refreshProfile,
       completeOnboarding,
+      switchDevRole,
     ],
   );
 

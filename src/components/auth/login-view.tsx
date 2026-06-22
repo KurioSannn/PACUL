@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Leaf, Lock, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAuth } from "@/contexts/auth-context";
 import { demoAccounts, defaultDemoPassword } from "@/lib/labels";
@@ -18,6 +18,8 @@ const SUPABASE_CONFIG_MESSAGE =
 
 export function LoginView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionExpired = searchParams.get("expired") === "1";
   const {
     signIn,
     error: authError,
@@ -66,7 +68,10 @@ export function LoginView() {
     }
   };
 
-  const displayError = localError ?? authError;
+  const displayError =
+    localError ??
+    authError ??
+    (sessionExpired ? "Sesi login habis. Silakan masuk kembali dengan akun demo." : null);
   const showConfigWarning = mounted && !isConfigured;
 
   return (

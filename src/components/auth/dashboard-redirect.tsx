@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/auth-context";
+import { appConfig } from "@/lib/config";
 import { getDashboardPath } from "@/lib/navigation";
 import { routes } from "@/lib/routes";
 
@@ -13,6 +14,10 @@ export function DashboardRedirect() {
 
   useEffect(() => {
     if (isLoading) return;
+    if (appConfig.devBypassAuth) {
+      if (profile) router.replace(getDashboardPath(profile.role));
+      return;
+    }
     if (!isConfigured || !accessToken) {
       router.replace(routes.authLogin);
       return;
