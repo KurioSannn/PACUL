@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Recycle } from "lucide-react";
 
 import { routes } from "@/lib/routes";
 
@@ -12,7 +11,7 @@ const productLinks = [
 
 const actorLinks = [
   { href: routes.home, label: "Rumah Tangga" },
-  { href: routes.collectorPickups, label: "Pengepul" },
+  { href: routes.collectorPickups, label: "Pengelola Material" },
   { href: routes.dashboardIndustry, label: "Industri Pengolah" },
 ];
 
@@ -30,13 +29,14 @@ export function PublicFooter() {
         <div className="grid gap-10 lg:grid-cols-[1.3fr_0.7fr_0.7fr_0.9fr]">
           <div className="max-w-md">
             <Link href={routes.home} className="inline-flex items-center gap-3 font-semibold tracking-tight">
-              <span className="grid size-9 place-items-center rounded-[11px] bg-[var(--color-mint-100)] text-[var(--color-forest-900)]">
-                <Recycle className="size-4" aria-hidden="true" />
-              </span>
-              <span className="text-sm tracking-[0.18em]">PACUL</span>
+              <img
+                src="/BISSMILAH MENANG fix.png"
+                alt="PACUL Logo"
+                className="h-9 w-auto object-contain brightness-0 invert"
+              />
             </Link>
             <p className="mt-4 text-sm leading-7 text-[#c8dbd1]">
-              Marketplace daur ulang untuk menghubungkan rumah tangga, pengepul, dan industri pengolah dalam alur material yang lebih jelas.
+              Platform sirkular untuk menghubungkan sumber sampah, pengelola material, dan kebutuhan industri dalam alur yang lebih jelas.
             </p>
           </div>
 

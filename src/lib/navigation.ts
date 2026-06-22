@@ -40,6 +40,7 @@ export const householdNavigation: NavigationSection = {
     { href: routes.pickupRoutes, label: "Status pickup" },
     { href: routes.orders, label: "Riwayat transaksi" },
     { href: routes.reviews, label: "Ulasan" },
+    { href: routes.reports, label: "Laporan" },
   ],
 };
 
@@ -54,6 +55,7 @@ export const collectorNavigation: NavigationSection = {
     { href: routes.collectorMaterialsNew, label: "Stok bahan baku" },
     { href: routes.negotiations, label: "Negosiasi" },
     { href: routes.traceability("material-demo-01"), label: "Traceability" },
+    { href: routes.reports, label: "Laporan" },
   ],
 };
 

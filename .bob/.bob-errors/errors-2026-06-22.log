@@ -1,0 +1,30 @@
+
+================================================================================
+ERROR LOGGED: 2026-06-22T13:34:16.608Z
+User ID: cleofirman053@gmail.com
+================================================================================
+Error Name: Error
+Error Message: Authentication timeout (3 minutes)
+
+Stack Trace:
+Error: Authentication timeout (3 minutes)
+    at Timeout._onTimeout (file:///C:/Users/Lenovo/AppData/Roaming/npm/node_modules/bobshell/bundle/bob.js:2095:91)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+================================================================================
+
+
+================================================================================
+ERROR LOGGED: 2026-06-22T13:37:49.555Z
+User ID: cleofirman053@gmail.com
+================================================================================
+Error Name: Error
+Error Message: Authentication timeout (3 minutes)
+
+Stack Trace:
+Error: Authentication timeout (3 minutes)
+    at Timeout._onTimeout (file:///C:/Users/Lenovo/AppData/Roaming/npm/node_modules/bobshell/bundle/bob.js:2095:91)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+================================================================================
+
