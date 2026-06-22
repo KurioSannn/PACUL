@@ -54,6 +54,14 @@ export class AiController {
     return this.classificationService.getClassification(id, user.id);
   }
 
+  @Get('classifications/:id/override-history')
+  getOverrideHistory(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.classificationService.getOverrideHistory(id, user.id);
+  }
+
   @Post('classifications/:id/override')
   overrideClassification(
     @CurrentUser() user: AuthUser,

@@ -13,6 +13,7 @@ import { detectImageMimeType } from '../storage/waste-image.validation';
 import { assertWasteImageOwnership } from '../storage/waste-image.validation';
 import type {
   AiClassification,
+  ClassificationOverride,
   ClassificationResponse,
 } from './ai-classification.types';
 import { WASTE_CLASSIFIER } from './ai.tokens';
@@ -256,6 +257,26 @@ export class ClassificationService {
 
     const updatedRow = this.mapRow(data);
 
+    const { error: auditError } = await admin
+      .from('classification_overrides')
+      .insert({
+        classification_id: id,
+        user_id: userId,
+        original_category_id: row.db_category_id,
+        original_class: row.top_class,
+        original_confidence: row.confidence,
+        override_category_id: overrideCategoryId,
+        override_reason: reason ?? null,
+      });
+
+    if (auditError) {
+      throw new InternalServerErrorException({
+        error: 'Failed to record classification override audit entry',
+        code: 'CLASSIFICATION_OVERRIDE_AUDIT_FAILED',
+        details: auditError.message,
+      });
+    }
+
     this.traceabilityService.emitEvent({
       eventType: 'ai_classification_overridden',
       entityType: 'ai_classification',
@@ -270,6 +291,52 @@ export class ClassificationService {
     });
 
     return this.toResponse(updatedRow, overrideCategory, false);
+  }
+
+  async getOverrideHistory(
+    id: string,
+    userId: string,
+  ): Promise<ClassificationOverride[]> {
+    const row = await this.fetchClassificationRow(id);
+
+    if (!row || row.user_id !== userId) {
+      throw new NotFoundException({
+        error: 'Classification not found',
+        code: 'CLASSIFICATION_NOT_FOUND',
+      });
+    }
+
+    const admin = this.supabaseService.getAdminClient();
+    const { data, error } = await admin
+      .from('classification_overrides')
+      .select(
+        'id, classification_id, user_id, original_category_id, original_class, original_confidence, override_category_id, override_reason, created_at',
+      )
+      .eq('classification_id', id)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      throw new InternalServerErrorException({
+        error: 'Failed to load override history',
+        code: 'OVERRIDE_HISTORY_FAILED',
+        details: error.message,
+      });
+    }
+
+    return (data ?? []).map((entry) => ({
+      id: entry.id,
+      classification_id: entry.classification_id,
+      user_id: entry.user_id,
+      original_category_id: entry.original_category_id,
+      original_class: entry.original_class,
+      original_confidence:
+        entry.original_confidence === null
+          ? null
+          : Number(entry.original_confidence),
+      override_category_id: entry.override_category_id,
+      override_reason: entry.override_reason,
+      created_at: entry.created_at,
+    }));
   }
 
   async listUserClassifications(

@@ -20,6 +20,18 @@ export interface AiClassification {
   created_at: string;
 }
 
+export interface ClassificationOverride {
+  id: string;
+  classification_id: string;
+  user_id: string;
+  original_category_id: string | null;
+  original_class: string | null;
+  original_confidence: number | null;
+  override_category_id: string;
+  override_reason: string | null;
+  created_at: string;
+}
+
 export interface ClassificationResponse {
   id: string;
   image_path: string;

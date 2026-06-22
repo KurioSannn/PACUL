@@ -712,7 +712,38 @@ Manually correct an AI classification result before creating a listing. Each cla
 }
 ```
 
-After override, `category` reflects the manually selected waste category (not the original AI mapping).
+After override, `category` reflects the manually selected waste category (not the original AI mapping). Each override is also written to the `classification_overrides` audit table with a before/after snapshot.
+
+### `GET /ai/classifications/:id/override-history` (authenticated)
+
+Returns the full override audit trail for a classification, ordered oldest-first. Only the owning user can access it.
+
+**Headers:** `Authorization: Bearer <supabase_jwt>`
+
+**Response**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "classification_id": "uuid",
+      "user_id": "uuid",
+      "original_category_id": "uuid",
+      "original_class": "plastic_pet",
+      "original_confidence": 0.42,
+      "override_category_id": "uuid",
+      "override_reason": "Bukan botol PET, ini kaca bening",
+      "created_at": "2026-06-22T01:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Errors**
+
+- `404 CLASSIFICATION_NOT_FOUND` — missing or not owned by user
 
 **Errors**
 
