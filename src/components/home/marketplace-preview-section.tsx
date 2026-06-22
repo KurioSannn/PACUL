@@ -82,7 +82,7 @@ export function MarketplacePreviewSection() {
                     <p className="mt-3 text-sm leading-6 text-white">{item.description}</p>
                     <Link
                       href={item.href}
-                      className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/50 bg-black/40 px-5 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-black active:scale-95"
+                      className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/50 bg-black/50 px-5 text-sm font-semibold !text-white transition-colors hover:bg-white/20 active:scale-95"
                     >
                       {item.cta}
                       <ArrowRight className="size-4" aria-hidden="true" />

@@ -20,7 +20,7 @@ export function JoinCtaSection() {
               Gabung ke PACUL untuk menjelajahi material, membuka peluang kolaborasi, dan memperluas ekosistem daur ulang yang lebih terhubung.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Link href={routes.authRegister} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-sm font-semibold text-[var(--color-forest-950)] transition-colors hover:bg-[var(--color-mint-100)]">
+              <Link href={routes.authRegister} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-emerald px-6 text-sm font-semibold text-green-500 transition-colors hover:bg-[var(--color-mint-100)]">
                 Gabung ke PACUL
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Link>

@@ -118,8 +118,12 @@ export function PublicHeader() {
                   "rounded-full px-4 py-2 text-sm transition-all duration-300",
                   isActive ? "font-bold" : "font-semibold",
                   scrolled
-                    ? "!text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)] hover:!text-[var(--color-leaf-700)]"
-                    : "!text-white hover:bg-white/15"
+                    ? isActive 
+                      ? "!text-emerald-600" 
+                      : "!text-[var(--color-forest-900)] hover:!text-emerald-600"
+                    : isActive
+                      ? "!text-emerald-400"
+                      : "!text-white hover:!text-emerald-400"
                 )}
               >
                 {item.label}
@@ -235,7 +239,7 @@ export function PublicHeader() {
                           onClick={(e) => handleScroll(e, item.href)}
                           className={cn(
                             "rounded-xl px-4 py-3 text-sm transition-colors",
-                            isActive ? "font-bold text-[var(--color-leaf-700)] bg-[var(--color-sage-50)]" : "font-semibold text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)] hover:text-[var(--color-leaf-700)]"
+                            isActive ? "font-bold text-emerald-600 bg-emerald-50/50" : "font-semibold text-[var(--color-forest-900)] hover:text-emerald-600"
                           )}
                         />
                       }

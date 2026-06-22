@@ -12,9 +12,9 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
 const heroLines = [
-  "Sampah rumah tangga jadi bahan baku bernilai.",
-  "Tiga aktor, satu alur daur ulang.",
-  "Dari tong sampah ke rantai pasok industri.",
+  "Sampah jadi bahan bernilai.",
+  "Satu alur daur ulang cerdas.",
+  "Pasok industri dari rumah.",
 ];
 
 export function PaculHero() {
@@ -69,31 +69,21 @@ export function PaculHero() {
           animate="visible"
           className="flex flex-col items-center gap-5"
         >
-          {/* Badge pill */}
-          <motion.a
-            variants={slideUp}
-            href="#fitur"
-            className="group mx-auto flex w-fit items-center gap-3 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/80 shadow-sm backdrop-blur-sm transition-all hover:bg-white/10"
-          >
-            <Leaf className="size-3 text-[var(--color-leaf-500)]" />
-            <span className="text-xs font-medium">Data demo MVP</span>
-            <span className="block h-4 border-l border-white/20" />
-            <ArrowRight className="size-3 transition-transform duration-150 ease-out group-hover:translate-x-0.5" />
-          </motion.a>
+
 
           {/* Rotating Headline */}
           <motion.div
             variants={slideUp}
-            className="relative h-[4.5rem] sm:h-[5rem] md:h-[5.5rem] lg:h-[7rem] w-full max-w-3xl overflow-hidden"
+            className="relative mb-8 h-[6rem] sm:h-[7rem] md:h-[8rem] lg:h-[10rem] w-full max-w-5xl px-4"
           >
             <AnimatePresence mode="wait">
               <motion.h1
                 key={lineIndex}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -30 }}
+                exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="absolute inset-0 flex items-center justify-center text-balance text-center text-4xl font-semibold tracking-tight text-white md:text-5xl lg:text-6xl"
+                className="absolute inset-0 flex items-center justify-center text-balance text-center text-4xl font-bold tracking-tight !text-white sm:text-5xl md:text-6xl lg:text-[4.5rem] lg:leading-[1.1]"
               >
                 {heroLines[lineIndex]}
               </motion.h1>
@@ -103,29 +93,28 @@ export function PaculHero() {
           {/* Sub-copy */}
           <motion.p
             variants={slideUp}
-            className="mx-auto max-w-lg text-center text-base tracking-wide text-white/70 sm:text-lg md:text-xl"
+            className="mx-auto max-w-[520px] text-center text-lg tracking-wide !text-white sm:text-xl md:text-2xl"
           >
-            Rumah tangga membuat listing, pengepul mengambil, <br className="hidden md:block" />
-            industri membeli bahan baku daur ulang.
+            Hubungkan rumah tangga, pengepul, dan industri <br className="hidden md:block" /> dalam satu ekosistem daur ulang.
           </motion.p>
 
           {/* CTA buttons */}
           <motion.div
             variants={slideUp}
-            className="flex flex-row flex-wrap items-center justify-center gap-3 pt-2"
+            className="mt-8 flex flex-row flex-wrap items-center justify-center gap-5"
           >
             <Link
               href="#fitur"
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/30 px-6 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              className="inline-flex min-h-16 items-center justify-center rounded-full border-2 border-white/50 px-10 py-5 text-lg font-bold !text-white transition-colors hover:bg-white/20"
             >
               Lihat Alur
             </Link>
             <Link
               href={routes.listingsNew}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-leaf-600)] px-6 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-leaf-700)]"
+              className="inline-flex min-h-16 items-center justify-center gap-3 rounded-full bg-[#1f7a4d] px-10 py-5 text-lg font-bold !text-white transition-colors hover:bg-[#17643f]"
             >
               Buat Listing
-              <ArrowRight className="size-4" data-icon="inline-end" />
+              <ArrowRight className="size-5 !text-white" aria-hidden="true" />
             </Link>
           </motion.div>
         </motion.div>
