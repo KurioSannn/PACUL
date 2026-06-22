@@ -14,6 +14,7 @@ import type { MaterialBatchStatus } from '../materials/materials.types';
 import type { OrderStatus } from '../orders/orders.types';
 import type { UserRole } from '../profiles/profiles.types';
 import { TraceabilityService } from '../traceability/traceability.service';
+import { PointsService } from '../eco-points/points.service';
 import { AuditService } from '../notifications/audit.service';
 import { NotificationService } from '../notifications/notification.service';
 import type { Transaction, TransactionStatus } from './transactions.types';
@@ -85,6 +86,7 @@ export class TransactionService {
     private readonly traceabilityService: TraceabilityService,
     private readonly notificationService: NotificationService,
     private readonly auditService: AuditService,
+    private readonly pointsService: PointsService,
   ) {}
 
   async simulateTransaction(
@@ -257,6 +259,22 @@ export class TransactionService {
           batchId: transaction.batch_id,
           amount: Number(transaction.amount),
         },
+      });
+
+      void this.pointsService.awardPoints({
+        userId: transaction.industry_id,
+        eventType: 'transaction_completed',
+        entityType: 'transaction',
+        entityId: transaction.id,
+        description: 'Transaksi material selesai',
+      });
+
+      void this.pointsService.awardPoints({
+        userId: transaction.collector_id,
+        eventType: 'transaction_completed',
+        entityType: 'transaction',
+        entityId: transaction.id,
+        description: 'Transaksi material selesai',
       });
 
       this.auditService.logAction({

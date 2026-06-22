@@ -17,6 +17,7 @@ import type { ListingFiltersDto } from './dto/listing-filters.dto';
 import type { UpdateWasteListingDto } from './dto/update-waste-listing.dto';
 import { haversineDistanceKm } from './geo.utils';
 import { TraceabilityService } from '../traceability/traceability.service';
+import { PointsService } from '../eco-points/points.service';
 import { StatusTransitionService } from './status-transition.service';
 import type {
   CollectorAvailableWasteListing,
@@ -211,6 +212,7 @@ export class ListingService {
     private readonly configService: ConfigService<EnvironmentVariables, true>,
     private readonly traceabilityService: TraceabilityService,
     private readonly statusTransitionService: StatusTransitionService,
+    private readonly pointsService: PointsService,
   ) {}
 
   async createListing(
@@ -665,6 +667,14 @@ export class ListingService {
       actorRole: 'household',
       previousStatus: 'draft',
       newStatus: 'available',
+    });
+
+    void this.pointsService.awardPoints({
+      userId: householdId,
+      eventType: 'listing_published',
+      entityType: 'waste_listing',
+      entityId: id,
+      description: 'Listing sampah dipublikasikan',
     });
 
     const published = await this.fetchListingWithDetailsById(id);

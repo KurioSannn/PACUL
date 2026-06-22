@@ -5,6 +5,7 @@ import { SupabaseService } from '../../supabase/supabase.service';
 import { ListingService } from './listing.service';
 import { StatusTransitionService } from './status-transition.service';
 import { TraceabilityService } from '../traceability/traceability.service';
+import { PointsService } from '../eco-points/points.service';
 import type { WasteListingWithDetails } from './waste-listings.types';
 
 describe('ListingService publish and cancel', () => {
@@ -105,6 +106,9 @@ describe('ListingService publish and cancel', () => {
       configService,
       { emitEvent: jest.fn() } as unknown as TraceabilityService,
       statusTransitionService,
+      {
+        awardPoints: jest.fn().mockResolvedValue(undefined),
+      } as unknown as PointsService,
     );
   });
 

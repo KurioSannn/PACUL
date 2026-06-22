@@ -9,6 +9,7 @@ import {
 import { SupabaseService } from '../../supabase/supabase.service';
 import type { UserRole } from '../profiles/profiles.types';
 import { TraceabilityService } from '../traceability/traceability.service';
+import { PointsService } from '../eco-points/points.service';
 import type {
   RatingContextType,
   RatingDistribution,
@@ -72,6 +73,7 @@ export class RatingService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly traceabilityService: TraceabilityService,
+    private readonly pointsService: PointsService,
   ) {}
 
   async submitRating(
@@ -155,6 +157,14 @@ export class RatingService {
         contextType: dto.contextType,
         reviewText: dto.reviewText?.trim() || null,
       },
+    });
+
+    void this.pointsService.awardPoints({
+      userId: raterId,
+      eventType: 'rating_submitted',
+      entityType,
+      entityId: dto.contextId,
+      description: 'Memberikan rating',
     });
 
     return this.mapReview(data);

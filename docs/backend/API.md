@@ -1884,6 +1884,56 @@ supabase db push
 # or: psql "$DATABASE_URL" -f db/migrations/011_transactions.sql
 ```
 
+## EcoPoints
+
+Gamification ledger. Points are awarded automatically (non-blocking) for platform actions and recorded in `point_ledger`. Awarding points emits an `eco_points_awarded` traceability event. A one-time `first_time_bonus` is granted on a user's first award.
+
+Point values (demo configuration, not a monetary equivalence):
+
+| Event | Points |
+| --- | --- |
+| `listing_published` | 10 |
+| `pickup_completed` | 25 |
+| `material_batch_created` | 15 |
+| `material_published` | 20 |
+| `transaction_completed` | 50 |
+| `rating_submitted` | 5 |
+| `first_time_bonus` | 100 |
+
+### `GET /points/me` (authenticated)
+
+Returns the current user's points summary.
+
+**Response**
+
+```json
+{
+  "success": true,
+  "data": {
+    "user_id": "uuid",
+    "total_points": 135,
+    "entry_count": 3,
+    "by_event_type": { "listing_published": 10, "first_time_bonus": 100, "pickup_completed": 25 },
+    "recent": [
+      {
+        "id": "uuid",
+        "user_id": "uuid",
+        "points": 25,
+        "event_type": "pickup_completed",
+        "entity_type": "pickup_route",
+        "entity_id": "uuid",
+        "description": "Rute pickup selesai",
+        "created_at": "2026-06-15T12:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+### `GET /points/:userId` (authenticated)
+
+Returns the points summary for the given user. Same shape as `GET /points/me`.
+
 ## Traceability (PACUL Track)
 
 Timeline endpoints that connect waste listings, material batches, and orders. Responses use city-level location data only — exact household addresses are never exposed to industry viewers.

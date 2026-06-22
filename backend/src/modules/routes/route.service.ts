@@ -13,6 +13,7 @@ import {
 import { haversineDistance } from '../../common/utils/haversine';
 import type { UserRole } from '../profiles/profiles.types';
 import { TraceabilityService } from '../traceability/traceability.service';
+import { PointsService } from '../eco-points/points.service';
 import { StatusTransitionService } from '../waste-listings/status-transition.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 import {
@@ -142,6 +143,7 @@ export class RouteService {
     private readonly costEstimationService: CostEstimationService,
     private readonly statusTransitionService: StatusTransitionService,
     private readonly traceabilityService: TraceabilityService,
+    private readonly pointsService: PointsService,
   ) {}
 
   async previewRoute(
@@ -305,6 +307,14 @@ export class RouteService {
         totalWeightKg: Number(route.total_weight_kg ?? 0),
         stopCount: activeStopCount,
         cost: actualCost,
+      });
+
+      void this.pointsService.awardPoints({
+        userId: collectorId,
+        eventType: 'pickup_completed',
+        entityType: 'pickup_route',
+        entityId: routeId,
+        description: 'Rute pickup selesai',
       });
     } else if (newStatus === 'cancelled') {
       await this.persistRouteStatusUpdate(routeId, route.status, {

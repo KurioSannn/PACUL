@@ -7,6 +7,7 @@ import { PickupClaimService } from '../../src/modules/pickup/pickup-claim.servic
 import { OrderService } from '../../src/modules/orders/order.service';
 import { NegotiationService } from '../../src/modules/negotiation/negotiation.service';
 import { TraceabilityService } from '../../src/modules/traceability/traceability.service';
+import { PointsService } from '../../src/modules/eco-points/points.service';
 import { AuditService } from '../../src/modules/notifications/audit.service';
 import { NotificationService } from '../../src/modules/notifications/notification.service';
 import {
@@ -58,6 +59,11 @@ export function createTestContext(): TestServiceContext {
   const statusTransition = new StatusTransitionService(supabase);
   const auditLog = jest.fn();
   const notification = jest.fn();
+  const points = {
+    awardPoints: jest.fn().mockResolvedValue(undefined),
+    getUserPoints: jest.fn(),
+    getPointsSummary: jest.fn(),
+  } as unknown as PointsService;
 
   const configService = {
     get: jest.fn((key: string) => {
@@ -73,6 +79,7 @@ export function createTestContext(): TestServiceContext {
     configService,
     traceability,
     statusTransition,
+    points,
   );
 
   const pickup = new PickupClaimService(
@@ -87,6 +94,7 @@ export function createTestContext(): TestServiceContext {
     supabase,
     statusTransition,
     traceability,
+    points,
   );
 
   const order = new OrderService(supabase, material, traceability);

@@ -19,6 +19,7 @@ export const TRACEABILITY_EVENT_TYPES = [
   'ai_classification_overridden',
   'listing_cancelled',
   'order_cancelled',
+  'eco_points_awarded',
 ] as const;
 
 export type TraceabilityEventType = (typeof TRACEABILITY_EVENT_TYPES)[number];

@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { TraceabilityService } from '../traceability/traceability.service';
+import { PointsService } from '../eco-points/points.service';
 import { StatusTransitionService } from '../waste-listings/status-transition.service';
 import { MaterialBatchService } from './material-batch.service';
 import type { MaterialBatchWithDetails } from './materials.types';
@@ -172,6 +173,9 @@ describe('MaterialBatchService transitions', () => {
       supabaseService,
       statusTransitionService,
       { emitEvent: jest.fn() } as unknown as TraceabilityService,
+      {
+        awardPoints: jest.fn().mockResolvedValue(undefined),
+      } as unknown as PointsService,
     );
     jest.spyOn(service, 'getBatch').mockResolvedValue(batchWithDetails);
   });

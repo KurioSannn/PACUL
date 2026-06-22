@@ -12,6 +12,7 @@ import { seedOrdersNegotiation } from './016_orders_negotiation';
 import { seedRatings } from './017_ratings';
 import { seedTraceability } from './018_traceability';
 import { seedAiModelVersions } from './019_ai_model_versions';
+import { seedEcoPoints } from './020_eco_points';
 
 config({ path: resolve(process.cwd(), '.env') });
 
@@ -68,6 +69,10 @@ const seeds: SeedRunner[] = [
   {
     name: '019_ai_model_versions',
     run: seedAiModelVersions,
+  },
+  {
+    name: '020_eco_points',
+    run: seedEcoPoints,
   },
 ];
 

@@ -56,6 +56,28 @@ paths:
       security: *a1
       summary: Get PACUL Track timeline for an order
       tags: *a2
+  /points/me:
+    get:
+      operationId: PointsController_getMyPoints
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a3
+        - Points
+  /points/{userId}:
+    get:
+      operationId: PointsController_getUserPoints
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
   /roles/capabilities:
     get:
       operationId: AuthController_getCapabilities
@@ -79,7 +101,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a3
+      tags: &a4
         - Ai
   /ai/model-version:
     get:
@@ -88,7 +110,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a3
+      tags: *a4
   /ai/classifications/{id}:
     get:
       operationId: AiController_getClassification
@@ -101,7 +123,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a3
+      tags: *a4
   /ai/classifications/{id}/override-history:
     get:
       operationId: AiController_getOverrideHistory
@@ -114,7 +136,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a3
+      tags: *a4
   /ai/classifications/{id}/override:
     post:
       operationId: AiController_overrideClassification
@@ -133,7 +155,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a3
+      tags: *a4
   /me:
     get:
       operationId: ProfilesController_getMe
@@ -141,10 +163,10 @@ paths:
       responses:
         "200":
           description: ""
-      security: &a4
+      security: &a5
         - bearer: []
       summary: Get authenticated user profile
-      tags: &a5
+      tags: &a6
         - auth
   /me/profile:
     patch:
@@ -153,9 +175,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a4
+      security: *a5
       summary: Update role-specific profile fields
-      tags: *a5
+      tags: *a6
   /auth/complete-profile:
     post:
       operationId: ProfilesController_completeProfile
@@ -169,9 +191,9 @@ paths:
       responses:
         "201":
           description: ""
-      security: *a4
+      security: *a5
       summary: Complete onboarding profile after Supabase sign-up
-      tags: *a5
+      tags: *a6
   /waste-images/upload:
     post:
       operationId: WasteImagesController_uploadImage
@@ -179,7 +201,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a6
+      tags: &a7
         - WasteImages
   /waste-images/signed-url:
     get:
@@ -188,7 +210,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a6
+      tags: *a7
   /collector/available-waste:
     get:
       operationId: CollectorController_getAvailableWaste
@@ -196,7 +218,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a7
+      tags: &a8
         - Collector
   /collector/handled-categories:
     get:
@@ -205,7 +227,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
+      tags: *a8
     post:
       operationId: CollectorController_setHandledCategories
       parameters: []
@@ -218,7 +240,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a7
+      tags: *a8
   /collector/handled-categories/{categoryId}:
     delete:
       operationId: CollectorController_removeHandledCategory
@@ -231,7 +253,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
+      tags: *a8
   /waste-listings:
     post:
       operationId: WasteListingsController_createListing
@@ -245,7 +267,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a8
+      tags: &a9
         - WasteListings
     get:
       operationId: WasteListingsController_listListings
@@ -253,7 +275,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a8
+      tags: *a9
   /waste-listings/{id}/publish:
     post:
       operationId: WasteListingsController_publishListing
@@ -266,7 +288,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a8
+      tags: *a9
   /waste-listings/{id}/cancel:
     post:
       operationId: WasteListingsController_cancelListing
@@ -285,7 +307,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a8
+      tags: *a9
   /waste-listings/{id}:
     get:
       operationId: WasteListingsController_getListingById
@@ -298,7 +320,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a8
+      tags: *a9
     patch:
       operationId: WasteListingsController_updateListing
       parameters:
@@ -316,7 +338,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a8
+      tags: *a9
   /dashboard/summary:
     get:
       operationId: DashboardController_getSummary
@@ -324,10 +346,10 @@ paths:
       responses:
         "200":
           description: ""
-      security: &a9
+      security: &a10
         - bearer: []
       summary: Get role-specific dashboard summary metrics
-      tags: &a10
+      tags: &a11
         - dashboard
   /dashboard/impact:
     get:
@@ -362,9 +384,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a9
+      security: *a10
       summary: Get platform-wide impact metrics with optional filters
-      tags: *a10
+      tags: *a11
   /dashboard/material-flow:
     get:
       operationId: DashboardController_getMaterialFlow
@@ -398,9 +420,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a9
+      security: *a10
       summary: Get material flow breakdown by category and region
-      tags: *a10
+      tags: *a11
   /dashboard/routes:
     get:
       operationId: DashboardController_getRouteStats
@@ -408,9 +430,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a9
+      security: *a10
       summary: Get pickup route statistics for the collector
-      tags: *a10
+      tags: *a11
   /collector/material-batches:
     post:
       operationId: MaterialBatchController_createBatch
@@ -424,7 +446,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a11
+      tags: &a12
         - MaterialBatch
     get:
       operationId: MaterialBatchController_listCollectorBatches
@@ -432,7 +454,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
+      tags: *a12
   /collector/material-batches/{id}:
     get:
       operationId: MaterialBatchController_getBatch
@@ -445,7 +467,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
+      tags: *a12
     patch:
       operationId: MaterialBatchController_updateBatch
       parameters:
@@ -463,7 +485,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
+      tags: *a12
   /collector/material-batches/{id}/sources:
     post:
       operationId: MaterialBatchController_addSourceListings
@@ -482,7 +504,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a11
+      tags: *a12
   /collector/material-batches/{id}/sorting-complete:
     post:
       operationId: MaterialBatchController_markSortingComplete
@@ -495,7 +517,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a11
+      tags: *a12
   /collector/material-batches/{id}/publish:
     post:
       operationId: MaterialBatchController_publishBatch
@@ -508,7 +530,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a11
+      tags: *a12
   /collector/material-batches/{id}/unavailable:
     post:
       operationId: MaterialBatchController_markBatchUnavailable
@@ -521,7 +543,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a11
+      tags: *a12
   /materials/{batchId}/publish-to-market:
     post:
       operationId: MaterialsMarketController_publishToMarket
@@ -540,7 +562,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a12
+      tags: &a13
         - MaterialsMarket
   /materials/market/{listingId}:
     patch:
@@ -560,7 +582,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a12
+      tags: *a13
   /materials/market/{listingId}/withdraw:
     post:
       operationId: MaterialsMarketController_withdrawMarketListing
@@ -573,7 +595,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a12
+      tags: *a13
   /materials:
     get:
       operationId: MaterialsMarketplaceController_getAvailableMaterials
@@ -581,7 +603,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a13
+      tags: &a14
         - MaterialsMarketplace
   /materials/{id}:
     get:
@@ -595,7 +617,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a13
+      tags: *a14
   /negotiations/{id}:
     get:
       operationId: NegotiationController_getThread
@@ -608,10 +630,10 @@ paths:
       responses:
         "200":
           description: ""
-      security: &a14
+      security: &a15
         - bearer: []
       summary: Get negotiation thread detail
-      tags: &a15
+      tags: &a16
         - negotiations
   /negotiations/{id}/messages:
     get:
@@ -640,9 +662,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a14
+      security: *a15
       summary: List negotiation messages with pagination
-      tags: *a15
+      tags: *a16
     post:
       operationId: NegotiationController_sendTextMessage
       parameters:
@@ -660,9 +682,9 @@ paths:
       responses:
         "201":
           description: ""
-      security: *a14
+      security: *a15
       summary: Send a text message in a negotiation thread
-      tags: *a15
+      tags: *a16
   /negotiations/{id}/offers:
     post:
       operationId: NegotiationController_sendOffer
@@ -681,9 +703,9 @@ paths:
       responses:
         "201":
           description: ""
-      security: *a14
+      security: *a15
       summary: Send a price/weight offer or counter-offer
-      tags: *a15
+      tags: *a16
   /negotiations/{id}/accept:
     post:
       operationId: NegotiationController_acceptOffer
@@ -696,9 +718,9 @@ paths:
       responses:
         "201":
           description: ""
-      security: *a14
+      security: *a15
       summary: Accept the latest offer in a negotiation
-      tags: *a15
+      tags: *a16
   /negotiations/{id}/cancel:
     post:
       operationId: NegotiationController_cancelNegotiation
@@ -717,9 +739,9 @@ paths:
       responses:
         "201":
           description: ""
-      security: *a14
+      security: *a15
       summary: Cancel an active negotiation thread
-      tags: *a15
+      tags: *a16
   /orders/{orderId}/negotiation:
     post:
       operationId: OrderNegotiationController_startNegotiation
@@ -732,10 +754,10 @@ paths:
       responses:
         "201":
           description: ""
-      security: &a16
+      security: &a17
         - bearer: []
       summary: Start negotiation thread for an order
-      tags: &a17
+      tags: &a18
         - negotiations
   /orders/{orderId}/negotiation/history:
     get:
@@ -749,9 +771,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a16
+      security: *a17
       summary: Get negotiation history for an order
-      tags: *a17
+      tags: *a18
   /notifications:
     get:
       operationId: NotificationsController_listNotifications
@@ -773,10 +795,10 @@ paths:
       responses:
         "200":
           description: ""
-      security: &a18
+      security: &a19
         - bearer: []
       summary: List notifications for the current user
-      tags: &a19
+      tags: &a20
         - notifications
   /notifications/read-all:
     patch:
@@ -785,9 +807,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a18
+      security: *a19
       summary: Mark all notifications as read
-      tags: *a19
+      tags: *a20
   /notifications/{id}/read:
     patch:
       operationId: NotificationsController_markAsRead
@@ -800,9 +822,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a18
+      security: *a19
       summary: Mark a single notification as read
-      tags: *a19
+      tags: *a20
   /audit-logs:
     get:
       operationId: AuditLogsController_listOwnAuditLogs
@@ -828,10 +850,10 @@ paths:
       responses:
         "201":
           description: ""
-      security: &a20
+      security: &a21
         - bearer: []
       summary: Create a material purchase order (industry)
-      tags: &a21
+      tags: &a22
         - orders
     get:
       operationId: OrderController_listOrders
@@ -852,9 +874,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a20
+      security: *a21
       summary: List orders for the authenticated party
-      tags: *a21
+      tags: *a22
   /orders/{id}:
     get:
       operationId: OrderController_getOrder
@@ -867,9 +889,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a20
+      security: *a21
       summary: Get order detail by ID
-      tags: *a21
+      tags: *a22
   /orders/{id}/status:
     patch:
       operationId: OrderController_transitionOrderStatus
@@ -888,9 +910,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a20
+      security: *a21
       summary: Transition order status
-      tags: *a21
+      tags: *a22
   /collector/pickup-claims:
     post:
       operationId: PickupClaimController_claimListing
@@ -904,7 +926,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a22
+      tags: &a23
         - PickupClaim
     get:
       operationId: PickupClaimController_getCollectorClaims
@@ -912,7 +934,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a22
+      tags: *a23
   /collector/pickup-claims/{id}/status:
     patch:
       operationId: PickupClaimController_updateClaimStatus
@@ -931,7 +953,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a22
+      tags: *a23
   /ratings:
     post:
       operationId: RatingController_submitRating
@@ -945,7 +967,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a23
+      tags: &a24
         - Rating
   /ratings/summary/{actorId}:
     get:
@@ -959,7 +981,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a23
+      tags: *a24
   /realtime/channel-auth:
     post:
       operationId: RealtimeController_authorizeChannel
@@ -982,10 +1004,10 @@ paths:
       responses:
         "200":
           description: ""
-      security: &a24
+      security: &a25
         - bearer: []
       summary: List report export jobs for the current user
-      tags: &a25
+      tags: &a26
         - reports
   /reports/export/pdf:
     post:
@@ -1000,9 +1022,9 @@ paths:
       responses:
         "201":
           description: ""
-      security: *a24
+      security: *a25
       summary: Request a PDF impact report export
-      tags: *a25
+      tags: *a26
   /reports/export/excel:
     post:
       operationId: ReportController_exportExcel
@@ -1016,9 +1038,9 @@ paths:
       responses:
         "201":
           description: ""
-      security: *a24
+      security: *a25
       summary: Request an Excel report export
-      tags: *a25
+      tags: *a26
   /reports/{id}/download:
     get:
       operationId: ReportController_downloadExport
@@ -1031,9 +1053,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a24
+      security: *a25
       summary: Get a signed download URL for a completed export
-      tags: *a25
+      tags: *a26
   /reports/{id}:
     get:
       operationId: ReportController_getExport
@@ -1046,9 +1068,9 @@ paths:
       responses:
         "200":
           description: ""
-      security: *a24
+      security: *a25
       summary: Get export job status and metadata
-      tags: *a25
+      tags: *a26
   /routes/preview:
     post:
       operationId: RoutesController_previewRoute
@@ -1062,7 +1084,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a26
+      tags: &a27
         - Routes
   /routes:
     post:
@@ -1077,7 +1099,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a26
+      tags: *a27
   /routes/{id}:
     get:
       operationId: RoutesController_getRouteById
@@ -1090,7 +1112,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a26
+      tags: *a27
   /routes/{id}/status:
     patch:
       operationId: RoutesController_updateRouteStatus
@@ -1109,7 +1131,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a26
+      tags: *a27
   /routes/{id}/stops/{stopId}/status:
     patch:
       operationId: RoutesController_updateStopStatus
@@ -1133,7 +1155,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a26
+      tags: *a27
   /routes/{id}/recalculate:
     post:
       operationId: RoutesController_recalculateRoute
@@ -1146,7 +1168,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a26
+      tags: *a27
   /transactions:
     get:
       operationId: TransactionController_listTransactions
@@ -1154,7 +1176,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a27
+      tags: &a28
         - Transaction
   /transactions/{id}/complete:
     post:
@@ -1168,7 +1190,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a27
+      tags: *a28
   /orders/{id}/transactions/simulate:
     post:
       operationId: OrderTransactionController_simulateTransaction

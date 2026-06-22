@@ -15,6 +15,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AiModule } from './modules/ai/ai.module';
 import { CollectorModule } from './modules/collector/collector.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { EcoPointsModule } from './modules/eco-points/points.module';
 import { MaterialsModule } from './modules/materials/materials.module';
 import { NegotiationModule } from './modules/negotiation/negotiation.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -56,6 +57,7 @@ import { SupabaseModule } from './supabase/supabase.module';
     }),
     SupabaseModule,
     TraceabilityModule,
+    EcoPointsModule,
     AuthModule,
     AiModule,
     ProfilesModule,

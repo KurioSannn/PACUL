@@ -9,6 +9,7 @@ import {
 import { validateMaterialBatchStatusTransition } from '../../common/config/status-transitions';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { TraceabilityService } from '../traceability/traceability.service';
+import { PointsService } from '../eco-points/points.service';
 import { StatusTransitionService } from '../waste-listings/status-transition.service';
 import type { WasteListingStatus } from '../waste-listings/waste-listings.types';
 import type { AddSourceListingsDto } from './dto/add-source-listings.dto';
@@ -245,6 +246,7 @@ export class MaterialBatchService {
     private readonly supabaseService: SupabaseService,
     private readonly statusTransitionService: StatusTransitionService,
     private readonly traceabilityService: TraceabilityService,
+    private readonly pointsService: PointsService,
   ) {}
 
   async createBatch(
@@ -287,6 +289,14 @@ export class MaterialBatchService {
         sourceListingIds: dto.sourceListingIds,
         totalWeightKg: initialWeight,
       },
+    });
+
+    void this.pointsService.awardPoints({
+      userId: collectorId,
+      eventType: 'material_batch_created',
+      entityType: 'material_batch',
+      entityId: batchId,
+      description: 'Batch material dibuat',
     });
 
     return this.getBatch(batchId, collectorId);
@@ -537,6 +547,14 @@ export class MaterialBatchService {
           totalWeightKg: Number(batch.total_weight_kg),
           pricePerKg: Number(batch.price_per_kg),
         },
+      });
+
+      void this.pointsService.awardPoints({
+        userId: collectorId,
+        eventType: 'material_published',
+        entityType: 'material_batch',
+        entityId: batchId,
+        description: 'Batch material dipublikasikan',
       });
     }
 
