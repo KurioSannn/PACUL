@@ -136,12 +136,41 @@ Hero mendukung video lokal opsional pada path berikut:
 Jika asset belum tersedia, UI memakai fallback visual hijau dan tetap bisa berjalan. Tidak ada video remote yang digunakan sebagai default.
 
 ## Getting Started
+
+### Frontend
 ```bash
 npm install
+cp .env.local.example .env.local
+# isi NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_API_URL
 npm run dev
 ```
 
 Buka `http://localhost:3000`.
+
+### Backend + data demo
+```bash
+cd backend
+npm install
+cp .env.example .env
+# isi Supabase URL, anon key, service role, JWT secret, DATABASE_URL
+npm run start:dev
+```
+
+Jalankan migrasi SQL di `backend/db/migrations/` (urut 001→021) ke Supabase, lalu seed:
+```bash
+cd backend
+npm run db:seed-auth
+npm run db:seed
+```
+
+Tanpa seed, dashboard dan marketplace akan kosong (semua angka 0).
+
+### Akun demo
+| Peran | Email | Password |
+| --- | --- | --- |
+| Rumah tangga | `household1@pacul-demo.com` | `PaculDemo2025!` |
+| Pengepul | `collector1@pacul-demo.com` | `PaculDemo2025!` |
+| Industri | `industry1@pacul-demo.com` | `PaculDemo2025!` |
 
 ## Available Scripts
 - `npm run dev`: menjalankan development server.
@@ -150,10 +179,10 @@ Buka `http://localhost:3000`.
 - `npm run typecheck`: menjalankan TypeScript typecheck tanpa emit.
 
 ## Demo Data
-Semua halaman skeleton memakai mock data dari `src/data/mock-pacul.ts` dan `src/data/mock-household.ts`. Data tersebut hanya placeholder untuk membangun UI dan alur, bukan data produksi.
+Data operasional (listing, pickup, material batch, order, negosiasi, transaksi) berasal dari seed backend (`backend/db/seeds/`). Landing page menjelaskan alur tiga lapis; halaman setelah login memuat data live dari API NestJS.
 
 ## Backend Integration Notes
-Integrasi produksi untuk Supabase, auth, storage, AI classification, realtime negotiation chat, dan export laporan masih pending dan akan dihubungkan dari branch backend.
+Frontend terhubung ke backend NestJS (`NEXT_PUBLIC_API_URL`, default `http://localhost:4000`) dan Supabase Auth. Pastikan backend berjalan dan CORS mengizinkan origin frontend.
 
 ## Notes
 - Arah visual mengikuti desain hijau natural, clean, dan operasional dari `DESIGN .md`.

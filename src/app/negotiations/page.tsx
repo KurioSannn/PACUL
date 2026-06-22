@@ -1,13 +1,14 @@
-import { NegotiationsView } from "@/components/industry/negotiations-view";
-import { PublicHeader } from "@/components/layout/public-header";
-import { PublicFooter } from "@/components/layout/public-footer";
+import { Suspense } from "react";
+
+import { NegotiationsConnected } from "@/components/connected/negotiations-connected";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 
 export default function NegotiationsPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--color-sage-50)] pt-[72px]">
-      <PublicHeader />
-      <NegotiationsView />
-      <PublicFooter />
-    </div>
+    <AppPageShell>
+      <Suspense fallback={<p className="page-shell py-8">Memuat negosiasi...</p>}>
+        <NegotiationsConnected />
+      </Suspense>
+    </AppPageShell>
   );
 }

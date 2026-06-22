@@ -1,4 +1,5 @@
-export const formatWeight = (weightKg: number) => `${weightKg.toLocaleString("id-ID")} kg`;
+export const formatWeight = (weightKg: number | null | undefined) =>
+  `${(weightKg ?? 0).toLocaleString("id-ID")} kg`;
 
 export const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("id-ID", {

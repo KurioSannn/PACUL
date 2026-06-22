@@ -1,5 +1,10 @@
-import { UserReportDashboard } from "@/components/reports/user-report-dashboard";
+import { ReportsConnected } from "@/components/connected/reports-connected";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 
 export default function ReportsPage() {
-  return <UserReportDashboard />;
+  return (
+    <AppPageShell>
+      <ReportsConnected />
+    </AppPageShell>
+  );
 }

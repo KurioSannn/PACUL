@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@source "../**/*.{js,ts,jsx,tsx,mdx}";
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -13,6 +15,7 @@
   --color-leaf-500: #2e9e63;
   --color-mint-200: #cdebda;
   --color-mint-100: #e8f6ee;
+  --color-mint-50: #f4fbf7;
   --color-sage-50: #f7fbf8;
   --color-earth-700: #6b4f24;
   --color-amber-100: #fff3cd;

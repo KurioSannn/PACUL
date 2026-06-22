@@ -1,13 +1,10 @@
-import { OrdersView } from "@/components/industry/orders-view";
-import { PublicHeader } from "@/components/layout/public-header";
-import { PublicFooter } from "@/components/layout/public-footer";
+import { OrdersConnected } from "@/components/connected/orders-connected";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 
 export default function OrdersPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--color-sage-50)] pt-[72px]">
-      <PublicHeader />
-      <OrdersView />
-      <PublicFooter />
-    </div>
+    <AppPageShell>
+      <OrdersConnected />
+    </AppPageShell>
   );
 }

@@ -23,6 +23,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:migrate": "node -e \"console.log(['Apply SQL migrations in numeric order from backend/db/migrations/','Use: supabase db push, or psql \\\"$DATABASE_URL\\\" -f db/migrations/NNN_name.sql','See docs/backend/DEPLOY.md for full checklist.'].join('\\n'))\"",
     "db:seed": "ts-node -r tsconfig-paths/register db/seeds/index.ts",
+    "db:seed-auth": "ts-node -r tsconfig-paths/register db/seeds/000_ensure_demo_auth.ts",
     "db:setup": "ts-node -r tsconfig-paths/register db/setup.ts",
     "backend:check": "npm run typecheck && npm run lint && npm run test && npm run build",
     "pr:check": "npm run typecheck && npm run lint && npm run test && npm run build"

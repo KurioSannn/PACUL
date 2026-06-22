@@ -1,24 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Menu, MessageCircle } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { Bell, LogOut, Menu, MessageCircle, User } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/contexts/auth-context";
+import { getHeaderNav, getPrimaryCta, showMessagesLink } from "@/lib/role-navigation";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
-const navigationItems = [
-  { href: routes.marketplaceWaste, label: "Marketplace" },
-  { href: routes.dashboard, label: "Dashboard" },
-  { href: routes.impact, label: "Dampak" },
-  { href: routes.reports, label: "Laporan" },
+const publicNav = [
+  { href: "#alur", label: "Alur" },
+  { href: "#marketplace", label: "Marketplace" },
+  { href: routes.demo, label: "Demo" },
+  { href: routes.deployReadiness, label: "Status" },
 ];
 
 export function PublicHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { accessToken, profile, signOut, isLoading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
+
+  const isLoggedIn = Boolean(accessToken && profile);
+  const navItems = isLoggedIn
+    ? getHeaderNav(profile?.role, true)
+    : publicNav.map((item) => ({ href: item.href.startsWith("#") ? `${routes.home}${item.href}` : item.href, label: item.label }));
+  const primaryCta = getPrimaryCta(profile?.role, isLoggedIn);
 
   useEffect(() => {
     const onScroll = () => {
@@ -41,6 +51,25 @@ export function PublicHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [pathname]);
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace(routes.authLogin);
+  };
+
+  const linkClass = cn(
+    "rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300",
+    scrolled
+      ? "!text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)] hover:text-[var(--color-leaf-700)]"
+      : "!text-white hover:bg-white/15",
+  );
+
+  const iconClass = cn(
+    "relative inline-flex size-9 items-center justify-center rounded-full transition-colors",
+    scrolled
+      ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]"
+      : "text-white hover:bg-white/15",
+  );
+
   return (
     <header
       className={cn(
@@ -51,86 +80,74 @@ export function PublicHeader() {
       )}
     >
       <nav className="landing-shell flex h-[72px] items-center justify-between">
-        {/* Logo */}
         <Link
-          href={routes.home}
+          href={isLoggedIn ? routes.dashboard : routes.home}
           className={cn(
             "inline-flex items-center gap-2 rounded-xl p-1.5 font-semibold tracking-tight transition-colors",
-            scrolled ? "hover:bg-[var(--color-mint-100)]" : "hover:bg-white/10"
+            scrolled ? "hover:bg-[var(--color-mint-100)]" : "hover:bg-white/10",
           )}
         >
           <img
             src="/BISSMILAH MENANG fix.png"
-            alt="PACUL Logo"
+            alt="PACUL"
             className={cn(
               "h-8 w-auto object-contain transition-all duration-300",
-              scrolled ? "" : "brightness-0 invert"
+              scrolled ? "" : "brightness-0 invert",
             )}
           />
         </Link>
 
-        {/* Center nav — desktop */}
         <div className="hidden items-center gap-1.5 md:flex">
-          {navigationItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300",
-                scrolled
-                  ? "!text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)] hover:text-[var(--color-leaf-700)]"
-                  : "!text-white hover:bg-white/15",
-              )}
-            >
+          {navItems.map((item) => (
+            <Link key={item.href} href={item.href} className={linkClass}>
               {item.label}
             </Link>
           ))}
         </div>
 
-        {/* Icon actions — desktop */}
         <div className="hidden items-center gap-1 md:flex">
-          <Link
-            href={routes.messages}
-            className={cn(
-              "relative inline-flex size-9 items-center justify-center rounded-full transition-colors",
-              scrolled
-                ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]"
-                : "text-white hover:bg-white/15",
-            )}
-            aria-label="Buka chat"
-          >
-            <MessageCircle className="size-[18px]" aria-hidden="true" />
-          </Link>
-          <Link
-            href={routes.notifications}
-            className={cn(
-              "relative inline-flex size-9 items-center justify-center rounded-full transition-colors",
-              scrolled
-                ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]"
-                : "text-white hover:bg-white/15",
-            )}
-            aria-label="Buka notifikasi"
-          >
-            <Bell className="size-[18px]" aria-hidden="true" />
-            <span className="absolute right-1 top-1 size-2 rounded-full bg-[var(--color-leaf-600)]" />
-          </Link>
+          {isLoggedIn && showMessagesLink(profile?.role) ? (
+            <Link href={routes.messages} className={iconClass} aria-label="Pesan">
+              <MessageCircle className="size-[18px]" aria-hidden="true" />
+            </Link>
+          ) : null}
+          {isLoggedIn ? (
+            <Link href={routes.notifications} className={iconClass} aria-label="Notifikasi">
+              <Bell className="size-[18px]" aria-hidden="true" />
+            </Link>
+          ) : null}
         </div>
 
-        {/* Right actions — desktop */}
         <div className="hidden items-center gap-2.5 md:flex">
+          {isLoading ? (
+            <span className={cn("text-sm", scrolled ? "text-[var(--color-ink-500)]" : "text-white/70")}>...</span>
+          ) : isLoggedIn ? (
+            <>
+              <Link href={routes.profile} className={linkClass}>
+                <span className="inline-flex items-center gap-2">
+                  <User className="size-4" aria-hidden="true" />
+                  {profile?.display_name ?? "Profil"}
+                </span>
+              </Link>
+              <button type="button" onClick={() => void handleSignOut()} className={linkClass} aria-label="Keluar">
+                <LogOut className="size-4" aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            <Link
+              href={routes.authLogin}
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 border",
+                scrolled
+                  ? "border-[var(--color-line)] !text-[var(--color-forest-900)] hover:bg-[var(--color-sage-50)]"
+                  : "border-white/30 bg-transparent !text-white hover:bg-white/15 hover:border-white/60",
+              )}
+            >
+              Masuk
+            </Link>
+          )}
           <Link
-            href={routes.authLogin}
-            className={cn(
-              "rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 border",
-              scrolled
-                ? "border-[var(--color-line)] !text-[var(--color-forest-900)] hover:bg-[var(--color-sage-50)]"
-                : "border-white/30 bg-transparent !text-white hover:bg-white/15 hover:border-white/60",
-            )}
-          >
-            Masuk
-          </Link>
-          <Link
-            href={routes.listingsNew}
+            href={primaryCta.href}
             className={cn(
               "rounded-full px-4.5 py-2 text-sm font-semibold transition-all duration-300 shadow-[0_1px_2px_rgba(0,0,0,0.08)]",
               scrolled
@@ -138,39 +155,18 @@ export function PublicHeader() {
                 : "bg-white !text-[var(--color-forest-900)] hover:bg-white/90",
             )}
           >
-            Buat Listing
+            {primaryCta.label}
           </Link>
         </div>
 
-        {/* Mobile toggle */}
         <div className="flex items-center gap-1.5 md:hidden">
+          {isLoggedIn ? (
+            <Link href={routes.profile} className={iconClass} aria-label="Profil">
+              <User className="size-[18px]" aria-hidden="true" />
+            </Link>
+          ) : null}
           <Link
-            href={routes.messages}
-            className={cn(
-              "inline-flex size-9 items-center justify-center rounded-full transition-colors",
-              scrolled
-                ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]"
-                : "text-white hover:bg-white/10",
-            )}
-            aria-label="Buka chat"
-          >
-            <MessageCircle className="size-[18px]" aria-hidden="true" />
-          </Link>
-          <Link
-            href={routes.notifications}
-            className={cn(
-              "relative inline-flex size-9 items-center justify-center rounded-full transition-colors",
-              scrolled
-                ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]"
-                : "text-white hover:bg-white/10",
-            )}
-            aria-label="Buka notifikasi"
-          >
-            <Bell className="size-[18px]" aria-hidden="true" />
-            <span className="absolute right-1 top-1 size-2 rounded-full bg-[var(--color-leaf-600)]" />
-          </Link>
-          <Link
-            href={routes.listingsNew}
+            href={primaryCta.href}
             className={cn(
               "rounded-full px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all duration-300",
               scrolled
@@ -178,7 +174,7 @@ export function PublicHeader() {
                 : "bg-white text-[var(--color-forest-900)] hover:bg-white/90",
             )}
           >
-            Buat Listing
+            {primaryCta.label}
           </Link>
           <Sheet>
             <SheetTrigger
@@ -194,11 +190,13 @@ export function PublicHeader() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[min(86vw,22rem)] border-[var(--color-line)] bg-white p-0">
               <SheetHeader className="border-b border-[var(--color-line)] p-4">
-                <SheetTitle className="text-[var(--color-forest-900)]">Navigasi PACUL</SheetTitle>
-                <SheetDescription>Jelajahi alur dan halaman demo PACUL.</SheetDescription>
+                <SheetTitle className="text-[var(--color-forest-900)]">PACUL</SheetTitle>
+                <SheetDescription>
+                  {isLoggedIn ? `Masuk sebagai ${profile?.display_name ?? profile?.role}` : "Marketplace daur ulang tiga lapis"}
+                </SheetDescription>
               </SheetHeader>
-              <nav className="grid gap-1 p-4" aria-label="Navigasi publik mobile">
-                {navigationItems.map((item) => (
+              <nav className="grid gap-1 p-4" aria-label="Navigasi mobile">
+                {navItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -209,18 +207,22 @@ export function PublicHeader() {
                 ))}
               </nav>
               <div className="grid gap-2 border-t border-[var(--color-line)] p-4">
-                <Link
-                  href={routes.authLogin}
-                  className="rounded-full border border-[var(--color-line)] px-4 py-2.5 text-center text-sm font-semibold text-[var(--color-forest-900)] transition-colors hover:bg-[var(--color-sage-50)]"
-                >
-                  Masuk
-                </Link>
-                <Link
-                  href={routes.listingsNew}
-                  className="rounded-full bg-[var(--color-leaf-600)] px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[var(--color-leaf-700)]"
-                >
-                  Buat Listing
-                </Link>
+                {isLoggedIn ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleSignOut()}
+                    className="rounded-full border border-[var(--color-line)] px-4 py-2.5 text-center text-sm font-semibold text-[var(--color-forest-900)]"
+                  >
+                    Keluar
+                  </button>
+                ) : (
+                  <Link
+                    href={routes.authLogin}
+                    className="rounded-full border border-[var(--color-line)] px-4 py-2.5 text-center text-sm font-semibold text-[var(--color-forest-900)]"
+                  >
+                    Masuk
+                  </Link>
+                )}
               </div>
             </SheetContent>
           </Sheet>

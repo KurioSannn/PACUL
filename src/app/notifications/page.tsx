@@ -1,13 +1,10 @@
-import { NotificationsView } from "@/components/notifications/notifications-view";
-import { PublicHeader } from "@/components/layout/public-header";
-import { PublicFooter } from "@/components/layout/public-footer";
+import { NotificationsConnected } from "@/components/connected/notifications-classification-connected";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 
 export default function NotificationsPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--color-sage-50)] pt-[72px]">
-      <PublicHeader />
-      <NotificationsView />
-      <PublicFooter />
-    </div>
+    <AppPageShell>
+      <NotificationsConnected />
+    </AppPageShell>
   );
 }

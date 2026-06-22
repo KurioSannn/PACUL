@@ -61,14 +61,22 @@ export function RoutePage({
 }: RoutePageProps) {
   return (
     <main className="page-shell space-y-8">
-      <PageHeader
-        eyebrow={eyebrow}
-        title={title}
-        description={description}
-        statusLabel={statusLabel}
-        primaryActionLabel={primaryActionLabel}
-        secondaryActionLabel={secondaryActionLabel}
-      />
+      <PageHeader eyebrow={eyebrow} title={title} description={description} />
+      {statusLabel ? (
+        <p className="inline-flex rounded-full bg-[var(--color-mint-100)] px-3 py-1 text-xs font-semibold text-[var(--color-leaf-700)]">
+          {statusLabel}
+        </p>
+      ) : null}
+      {primaryActionLabel || secondaryActionLabel ? (
+        <div className="flex flex-wrap gap-2">
+          {primaryActionLabel ? (
+            <span className="rounded-full bg-[var(--color-leaf-600)] px-4 py-2 text-sm font-semibold text-white">{primaryActionLabel}</span>
+          ) : null}
+          {secondaryActionLabel ? (
+            <span className="rounded-full border px-4 py-2 text-sm font-semibold">{secondaryActionLabel}</span>
+          ) : null}
+        </div>
+      ) : null}
 
       {callout ? (
         <Card className="panel border-dashed" style={{ backgroundColor: "rgb(232 246 238 / 70%)" }}>
