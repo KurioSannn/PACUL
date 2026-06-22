@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
 
 import { RequireAuth } from "@/components/auth/require-auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge, statusToneForWaste } from "@/components/ui/status-badge";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
+
 import { useAsyncData } from "@/hooks/use-async-data";
 import {
   cancelWasteListing,
@@ -49,18 +49,13 @@ function ListingDetailContent() {
   const { accessToken, profile } = useAuth();
   const { pushToast } = useToast();
   const listingId = params.id;
+  const listingQuery = useAsyncData(async () => {
+    return getWasteListing(accessToken!, listingId);
+  }, [accessToken, listingId], Boolean(accessToken && listingId));
 
-  const listingQuery = useAsyncData(
-    () => getWasteListing(accessToken!, listingId),
-    [accessToken, listingId],
-    Boolean(accessToken && listingId),
-  );
-
-  const traceQuery = useAsyncData(
-    () => getWasteTraceability(accessToken!, listingId),
-    [accessToken, listingId],
-    Boolean(accessToken && listingId),
-  );
+  const traceQuery = useAsyncData(async () => {
+    return getWasteTraceability(accessToken!, listingId);
+  }, [accessToken, listingId], Boolean(accessToken && listingId));
 
   const publish = async () => {
     if (!accessToken) return;
@@ -93,9 +88,11 @@ function ListingDetailContent() {
       <PageHeader
         eyebrow={listing.category.name}
         title={listing.title}
-        backHref={routes.myMaterials}
-        backLabel="Listing Saya"
+        backHref={routes.marketplaceWaste}
+        backLabel="Marketplace Sampah"
       />
+
+
 
       <header className="rounded-2xl border border-[var(--color-line)] bg-white p-6 shadow-sm">
         <StatusBadge label={wasteListingStatusLabels[listing.status]} tone={statusToneForWaste(listing.status)} />
@@ -111,7 +108,7 @@ function ListingDetailContent() {
         ) : null}
       </header>
 
-      <TraceabilityTimeline events={traceQuery.data ?? []} title="Jejak Material" />
+      <TraceabilityTimeline events={traceQuery.data?.events ?? []} title="Jejak Material" />
     </div>
   );
 }
@@ -120,12 +117,9 @@ function TraceabilityContent() {
   const params = useParams<{ materialId: string }>();
   const { accessToken } = useAuth();
   const batchId = params.materialId;
-
-  const traceQuery = useAsyncData(
-    () => getMaterialTraceability(accessToken!, batchId),
-    [accessToken, batchId],
-    Boolean(accessToken && batchId),
-  );
+  const traceQuery = useAsyncData(async () => {
+    return getMaterialTraceability(accessToken!, batchId);
+  }, [accessToken, batchId], Boolean(accessToken && batchId));
 
   return (
     <div className="page-shell grow space-y-6 py-8">
@@ -133,15 +127,18 @@ function TraceabilityContent() {
         eyebrow="Jejak Material"
         title="Timeline rantai pasok"
         description="Alur lengkap dari upload sampah, pickup, pemilahan, pesanan, negosiasi, hingga transaksi."
+        backHref={routes.marketplaceMaterials}
+        backLabel="Marketplace Bahan Baku"
       />
-      <TraceabilityTimeline events={traceQuery.data ?? []} title="Perjalanan bahan baku" />
+
+      <TraceabilityTimeline events={traceQuery.data?.batchEvents ?? []} title="Perjalanan bahan baku" />
     </div>
   );
 }
 
 export function ListingDetailConnected() {
   return (
-    <RequireAuth roles={["household", "collector"]}>
+    <RequireAuth>
       <ListingDetailContent />
     </RequireAuth>
   );

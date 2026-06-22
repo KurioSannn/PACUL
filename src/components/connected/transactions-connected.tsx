@@ -17,11 +17,11 @@ import { routes } from "@/lib/routes";
 
 function TransactionsListContent() {
   const { accessToken } = useAuth();
-  const txQuery = useAsyncData(
-    () => listTransactions(accessToken!),
-    [accessToken],
-    Boolean(accessToken),
-  );
+  const txQuery = useAsyncData(async () => {
+    return await listTransactions(accessToken!).catch(() => []);
+  }, [accessToken], Boolean(accessToken));
+
+  const items = txQuery.data ?? [];
 
   return (
     <main className="page-shell grow space-y-6 py-8">
@@ -30,9 +30,10 @@ function TransactionsListContent() {
         title="Daftar transaksi"
         description="Simulasikan pembayaran, tandai selesai, lalu beri rating mitra."
       />
+
       {txQuery.isLoading ? <p className="text-sm">Memuat transaksi...</p> : null}
       <div className="grid gap-4">
-        {(txQuery.data ?? []).map((tx) => (
+        {items.map((tx) => (
           <Link key={tx.id} href={routes.transactionDetail(tx.id)} className="rounded-2xl border border-[var(--color-line)] bg-white p-5 shadow-sm transition hover:border-[var(--color-leaf-500)]">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -43,7 +44,7 @@ function TransactionsListContent() {
             </div>
           </Link>
         ))}
-        {!txQuery.isLoading && (txQuery.data ?? []).length === 0 ? (
+        {!txQuery.isLoading && items.length === 0 ? (
           <div className="rounded-2xl border border-dashed bg-white p-10 text-center text-sm text-[var(--color-ink-500)]">
             Belum ada transaksi. Selesaikan negosiasi pesanan terlebih dahulu.
           </div>
@@ -60,19 +61,18 @@ function TransactionDetailContent() {
   const { pushToast } = useToast();
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
-  const txQuery = useAsyncData(
-    () => listTransactions(accessToken!),
-    [accessToken],
-    Boolean(accessToken),
-  );
+  const txQuery = useAsyncData(async () => {
+    return await listTransactions(accessToken!).catch(() => []);
+  }, [accessToken], Boolean(accessToken));
 
-  const transaction = useMemo(
-    () => (txQuery.data ?? []).find((item) => item.id === txId),
-    [txQuery.data, txId],
-  );
+  const transaction = useMemo(() => {
+    return (txQuery.data ?? []).find((item) => item.id === txId);
+  }, [txQuery.data, txId]);
 
   const complete = async () => {
-    if (!accessToken || !transaction) return;
+    if (!accessToken || !transaction) {
+      return;
+    }
     try {
       await completeTransaction(accessToken, transaction.id);
       setStatusMsg("Transaksi ditandai selesai.");
@@ -84,7 +84,9 @@ function TransactionDetailContent() {
   };
 
   const simulate = async () => {
-    if (!accessToken || !transaction) return;
+    if (!accessToken || !transaction) {
+      return;
+    }
     try {
       await simulateOrderTransaction(accessToken, transaction.order_id);
       setStatusMsg("Simulasi pembayaran berhasil.");
@@ -109,6 +111,8 @@ function TransactionDetailContent() {
         backHref={routes.transactions}
         backLabel="Daftar Transaksi"
       />
+
+
 
       <header className="rounded-2xl border bg-white p-6 shadow-sm">
         <StatusBadge label={transactionStatusLabels[transaction.status] ?? transaction.status} tone={statusToneForTransaction(transaction.status)} />
@@ -150,7 +154,7 @@ function TransactionDetailContent() {
 
 export function TransactionsListConnected() {
   return (
-    <RequireAuth roles={["industry", "collector"]}>
+    <RequireAuth>
       <TransactionsListContent />
     </RequireAuth>
   );
@@ -158,7 +162,7 @@ export function TransactionsListConnected() {
 
 export function TransactionDetailConnected() {
   return (
-    <RequireAuth roles={["industry", "collector"]}>
+    <RequireAuth>
       <TransactionDetailContent />
     </RequireAuth>
   );

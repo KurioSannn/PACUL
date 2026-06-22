@@ -1,151 +1,244 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Box, Layers, PackageOpen, Recycle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronRight, Layers } from "lucide-react";
+import { useState } from "react";
 
 import { RequireAuth } from "@/components/auth/require-auth";
+import { CartSummaryBar, MaterialProductCard } from "@/components/marketplace/product-card";
 import { useAuth } from "@/contexts/auth-context";
+import { useCart } from "@/contexts/cart-context";
+import { useToast } from "@/contexts/toast-context";
+
 import { useAsyncData } from "@/hooks/use-async-data";
-import { getCollectorAvailableWaste, listMaterials, listWasteListings } from "@/lib/api";
-import { formatWeight } from "@/lib/format";
+import {
+  createPickupClaim,
+  getCollectorAvailableWaste,
+  listMaterials,
+  listTransactions,
+} from "@/lib/api";
+import { wasteListingStatusLabels, materialBatchStatusLabels } from "@/lib/labels";
+import { formatCurrency } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
+function FlowStep({ n, title, desc }: { n: number; title: string; desc: string }) {
+  return (
+    <div className="flex min-w-[140px] flex-1 flex-col items-center text-center">
+      <span className="flex size-8 items-center justify-center rounded-full bg-[var(--color-leaf-600)] text-sm font-bold text-white">{n}</span>
+      <p className="mt-2 text-sm font-semibold text-[var(--color-forest-900)]">{title}</p>
+      <p className="mt-1 text-xs text-[var(--color-ink-500)]">{desc}</p>
+    </div>
+  );
+}
+
 function MarketplaceHubContent() {
+  const router = useRouter();
   const { accessToken, profile } = useAuth();
+  const { addItem } = useCart();
+  const { pushToast } = useToast();
+  const [claimingId, setClaimingId] = useState<string | null>(null);
 
-  const statsQuery = useAsyncData(async () => {
-    if (!accessToken || !profile) {
-      return { waste: 0, materials: 0 };
+  const feedQuery = useAsyncData(async () => {
+    if (!accessToken) return null;
+
+    const [materialsRes, txRes, wasteRes] = await Promise.all([
+      listMaterials(accessToken, { limit: 20, status: "available" }).catch(() => ({ items: [] })),
+      listTransactions(accessToken).catch(() => [] as never[]),
+      getCollectorAvailableWaste(accessToken, { limit: 20 }).catch(() => ({ items: [] })),
+    ]);
+
+    return {
+      waste: wasteRes.items,
+      materials: materialsRes.items,
+      finished: [] as any[],
+      transactions: txRes,
+    };
+  }, [accessToken], Boolean(accessToken));
+
+  const claimWaste = async (listingId: string) => {
+    if (!accessToken) return;
+    setClaimingId(listingId);
+    try {
+      await createPickupClaim(accessToken, listingId);
+      pushToast("Pickup diklaim. Lanjut ke rute pengambilan.", "success");
+      await feedQuery.reload();
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : "Gagal klaim.", "error");
+    } finally {
+      setClaimingId(null);
     }
+  };
 
-    if (profile.role === "household") {
-      const waste = await listWasteListings(accessToken, { limit: 1 });
-      const materials = await listMaterials(accessToken, { limit: 1 });
-      return { waste: waste.total, materials: materials.total };
-    }
+  const addToCart = (item: any) => {
+    addItem(item);
+    pushToast(`${item.name} masuk keranjang.`, "success");
+  };
 
-    if (profile.role === "collector") {
-      const waste = await getCollectorAvailableWaste(accessToken, { limit: 1 });
-      const materials = await listMaterials(accessToken, { limit: 1 });
-      return { waste: waste.total, materials: materials.total };
-    }
-
-    const materials = await listMaterials(accessToken, { limit: 1 });
-    return { waste: 0, materials: materials.total };
-  }, [accessToken, profile], Boolean(accessToken && profile));
-
-  const wasteCount = statsQuery.data?.waste ?? 0;
-  const materialCount = statsQuery.data?.materials ?? 0;
-
-  const layers = [
-    {
-      id: "waste",
-      icon: PackageOpen,
-      title: "Lapisan 1 · Sampah rumah tangga",
-      description:
-        profile?.role === "household"
-          ? "Listing sampah terpilah yang Anda jual ke pengepul."
-          : "Sampah terpilah dari rumah tangga, siap diambil pengepul.",
-      count: `${wasteCount} listing`,
-      href:
-        profile?.role === "household"
-          ? routes.myMaterials
-          : profile?.role === "collector"
-            ? routes.collectorPickups
-            : routes.marketplaceWaste,
-      cta:
-        profile?.role === "household"
-          ? "Kelola listing saya"
-          : profile?.role === "collector"
-            ? "Lihat pickup tersedia"
-            : "Info lapisan sampah",
-    },
-    {
-      id: "material",
-      icon: Recycle,
-      title: "Lapisan 2 · Bahan baku pengepul",
-      description: "Material hasil pemilahan pengepul, siap dibeli industri pengolah.",
-      count: `${materialCount} batch`,
-      href: routes.marketplaceMaterials,
-      cta: "Jelajahi bahan baku",
-    },
-    {
-      id: "finished",
-      icon: Box,
-      title: "Lapisan 3 · Produk olahan industri",
-      description: "Hasil pengolahan industri (opsional dijual kembali). Lacak via transaksi & traceability.",
-      count: "Transaksi & jejak",
-      href: profile?.role === "industry" ? routes.transactions : routes.impact,
-      cta: profile?.role === "industry" ? "Lihat transaksi" : "Lihat dampak",
-    },
-  ];
+  const role = profile?.role;
+  const wasteItems = feedQuery.data?.waste ?? [];
+  const materialItems = feedQuery.data?.materials ?? [];
+  const finishedItems = feedQuery.data?.finished ?? [];
 
   return (
-    <main className="page-shell grow space-y-8 py-8">
+    <main className="page-shell grow space-y-8 py-8 pb-24">
       <header className="rounded-[1.75rem] bg-[var(--color-forest-950)] px-6 py-10 text-white">
         <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#a9dfbd]">
-          <Layers className="size-4" aria-hidden="true" />
-          Marketplace Tiga Lapis
+          <Layers className="size-4" />
+          Marketplace Berkesinambungan
         </p>
-        <h1 className="mt-3 text-3xl font-semibold">Etalase PACUL</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
-          Sampah rumah tangga mengalir ke pengepul, dipilah menjadi bahan baku, lalu dibeli industri melalui
-          pesanan, negosiasi, dan transaksi.
+        <h1 className="mt-3 text-3xl font-semibold">Etalase PACUL — E-commerce 3 Lapis</h1>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-white/75">
+          Sampah difoto rumah tangga → pengepul klaim & pilah → industri beli via keranjang, checkout, negosiasi, dan
+          simulasi bayar. Katalog demo ditampilkan sama untuk semua peran.
         </p>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        {layers.map((layer) => {
-          const Icon = layer.icon;
-          return (
-            <article key={layer.id} className="flex flex-col rounded-2xl border border-[var(--color-line)] bg-white p-6">
-              <span className="inline-flex size-11 items-center justify-center rounded-xl bg-[var(--color-mint-100)] text-[var(--color-leaf-700)]">
-                <Icon className="size-5" aria-hidden="true" />
-              </span>
-              <h2 className="mt-5 text-lg font-semibold text-[var(--color-forest-900)]">{layer.title}</h2>
-              <p className="mt-2 flex-1 text-sm leading-6 text-[var(--color-ink-600)]">{layer.description}</p>
-              <p className="mt-4 text-sm font-semibold text-[var(--color-leaf-700)]">{layer.count}</p>
-              <Link
-                href={layer.href}
-                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-forest-900)]"
-              >
-                {layer.cta}
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </Link>
-            </article>
-          );
-        })}
-      </div>
 
-      {profile?.role === "household" ? (
-        <section className="rounded-2xl border border-dashed border-[var(--color-line)] bg-[var(--color-sage-50)] p-6 text-center">
-          <p className="font-semibold text-[var(--color-forest-900)]">Belum punya listing?</p>
-          <p className="mt-2 text-sm text-[var(--color-ink-600)]">
-            Mulai dengan upload foto dan klasifikasi AI, lalu publikasikan sampah terpilah Anda.
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-3">
+
+      <section className="rounded-2xl border bg-white p-6">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-[var(--color-ink-500)]">Alur rantai nilai</h2>
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+          <FlowStep n={1} title="RT jual sampah" desc="Foto + AI → listing" />
+          <ChevronRight className="hidden size-5 shrink-0 text-[var(--color-ink-400)] sm:block" />
+          <FlowStep n={2} title="Pengepul ambil & pilah" desc="Klaim → rute → bahan baku" />
+          <ChevronRight className="hidden size-5 shrink-0 text-[var(--color-ink-400)] sm:block" />
+          <FlowStep n={3} title="Industri beli" desc="Keranjang → nego → bayar" />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-[var(--color-forest-900)]">Lapisan 1 · Sampah rumah tangga</h2>
+            <p className="text-sm text-[var(--color-ink-600)]">Stok mentah dari rumah tangga — siap diambil pengepul.</p>
+          </div>
+          <Link href={routes.marketplaceWaste} className="text-sm font-semibold text-[var(--color-leaf-700)]">
+            Lihat semua →
+          </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {wasteItems.slice(0, 6).map((item) => (
+              <MaterialProductCard
+                key={item.id}
+                id={item.id}
+                name={item.title}
+                categoryName={item.category.name}
+                sellerLabel={item.household_display_name}
+                location={`${item.district ?? ""}${item.city ? `, ${item.city}` : ""}` || "Surabaya"}
+                weightKg={item.estimated_weight_kg}
+                pricePerKg={0}
+                statusLabel={wasteListingStatusLabels[item.status as keyof typeof wasteListingStatusLabels] ?? item.status}
+                secondaryAction={{ label: "Detail", href: routes.listingDetail(item.id) }}
+                primaryAction={
+                  role === "collector"
+                    ? {
+                        label: claimingId === item.id ? "Mengklaim..." : "Klaim pickup",
+                        onClick: () => void claimWaste(item.id),
+                      }
+                    : role === "household"
+                      ? { label: "Kelola", href: routes.listingDetail(item.id) }
+                      : undefined
+                }
+              />
+            ))}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-[var(--color-forest-900)]">Lapisan 2 · Bahan baku pengepul</h2>
+            <p className="text-sm text-[var(--color-ink-600)]">Hasil pemilahan — beli via keranjang & checkout.</p>
+          </div>
+          <Link href={routes.marketplaceMaterials} className="text-sm font-semibold text-[var(--color-leaf-700)]">
+            Etalase lengkap →
+          </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {materialItems.slice(0, 6).map((item) => (
+            <MaterialProductCard
+              key={item.id}
+              id={item.id}
+              name={item.name}
+              categoryName={item.category.name}
+              sellerLabel={item.collector.display_name}
+              location={`${item.city ?? "—"}, ${item.province ?? "Jawa Timur"}`}
+              weightKg={item.total_weight_kg}
+              pricePerKg={item.price_per_kg}
+              statusLabel={materialBatchStatusLabels[item.status] ?? item.status}
+              onAddToCart={role === "industry" && item.status === "available" ? () => addToCart(item) : undefined}
+              onBuyNow={
+                role === "industry" && item.status === "available"
+                  ? () => router.push(`${routes.ordersNew}?batchId=${item.id}`)
+                  : undefined
+              }
+              secondaryAction={{ label: "Jejak material", href: routes.traceability(item.id) }}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-end justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-[var(--color-forest-900)]">Lapisan 3 · Bahan baku jadi & transaksi</h2>
+            <p className="text-sm text-[var(--color-ink-600)]">Produk olahan industri + jejak transaksi simulasi.</p>
+          </div>
+          <Link href={routes.transactions} className="text-sm font-semibold text-[var(--color-leaf-700)]">
+            Semua transaksi →
+          </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {finishedItems.map((item) => (
+            <MaterialProductCard
+              key={item.id}
+              id={item.id}
+              name={item.name}
+              categoryName={item.category.name}
+              sellerLabel={item.collector.display_name}
+              location={`${item.city ?? "—"}, ${item.province ?? "Jawa Timur"}`}
+              weightKg={item.total_weight_kg}
+              pricePerKg={item.price_per_kg}
+              statusLabel="Bahan baku jadi"
+              onAddToCart={role === "industry" ? () => addToCart(item) : undefined}
+              secondaryAction={{ label: "Detail", href: routes.materialDetail(item.id) }}
+            />
+          ))}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {(feedQuery.data?.transactions ?? []).slice(0, 3).map((tx) => (
             <Link
-              href={routes.listingsNew}
-              className="rounded-full bg-[var(--color-leaf-600)] px-5 py-2.5 text-sm font-semibold text-white"
+              key={tx.id}
+              href={routes.transactionDetail(tx.id)}
+              className="rounded-xl border bg-white p-4 hover:bg-[var(--color-sage-50)]"
             >
-              Buat listing baru
+              <p className="text-xs font-semibold uppercase text-[var(--color-leaf-700)]">
+                Transaksi #{tx.id.slice(0, 12)}
+              </p>
+              <p className="mt-1 font-semibold">{formatCurrency(tx.amount)}</p>
+              <p className="text-sm text-[var(--color-ink-500)]">Status: {tx.status}</p>
             </Link>
-            <Link
-              href={routes.classificationDemo}
-              className="rounded-full border border-[var(--color-line)] bg-white px-5 py-2.5 text-sm font-semibold"
-            >
-              Coba klasifikasi AI
+          ))}
+        </div>
+      </section>
+
+      {role === "household" ? (
+        <section className="rounded-2xl border border-dashed bg-[var(--color-sage-50)] p-6 text-center">
+          <p className="font-semibold">Mulai rantai dari sini</p>
+          <p className="mt-2 text-sm text-[var(--color-ink-600)]">Foto sampah → AI klasifikasi → listing → pengepul ambil.</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <Link href={routes.listingsNew} className="rounded-full bg-[var(--color-leaf-600)] px-5 py-2.5 text-sm font-semibold text-white">
+              Jual sampah + foto
+            </Link>
+            <Link href={routes.classificationDemo} className="rounded-full border bg-white px-5 py-2.5 text-sm font-semibold">
+              Kamera AI live
             </Link>
           </div>
         </section>
       ) : null}
 
-      {statsQuery.data && wasteCount === 0 && materialCount === 0 && !statsQuery.isLoading ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Data demo belum ada di database. Jalankan <code className="text-xs">npm run db:seed</code> di folder{" "}
-          <code className="text-xs">backend</code>, lalu refresh halaman ini.
-        </p>
-      ) : null}
+      <CartSummaryBar />
     </main>
   );
 }

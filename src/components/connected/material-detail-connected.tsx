@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { RequireAuth } from "@/components/auth/require-auth";
 import { useAuth } from "@/contexts/auth-context";
+import { useCart } from "@/contexts/cart-context";
+import { useToast } from "@/contexts/toast-context";
 import { useAsyncData } from "@/hooks/use-async-data";
 import { getMaterial } from "@/lib/api";
 import { formatCurrency, formatWeight } from "@/lib/format";
@@ -13,12 +15,13 @@ import { routes } from "@/lib/routes";
 
 function MaterialDetailContent() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const { accessToken, profile } = useAuth();
-  const materialQuery = useAsyncData(
-    () => getMaterial(accessToken!, params.id),
-    [accessToken, params.id],
-    Boolean(accessToken && params.id),
-  );
+  const { addItem } = useCart();
+  const { pushToast } = useToast();
+  const materialQuery = useAsyncData(async () => {
+    return getMaterial(accessToken!, params.id);
+  }, [accessToken, params.id], Boolean(accessToken && params.id));
 
   const material = materialQuery.data;
 
@@ -39,6 +42,7 @@ function MaterialDetailContent() {
       <Link href={routes.marketplaceMaterials} className="text-sm font-semibold text-[var(--color-leaf-700)]">
         ← Kembali ke marketplace
       </Link>
+
       <header className="rounded-2xl border bg-white p-6">
         <p className="text-xs font-bold uppercase text-[var(--color-leaf-700)]">{material.category.name}</p>
         <h1 className="mt-2 text-3xl font-semibold">{material.name}</h1>
@@ -56,13 +60,32 @@ function MaterialDetailContent() {
         <Link href={routes.traceability(material.id)} className="rounded-full border px-5 py-2.5 text-sm font-semibold">
           Lihat traceability
         </Link>
-        {profile?.role === "industry" ? (
-          <Link
-            href={`${routes.ordersNew}?batchId=${material.id}`}
-            className="rounded-full bg-[var(--color-leaf-600)] px-5 py-2.5 text-sm font-semibold text-white"
-          >
-            Buat pesanan
-          </Link>
+        {profile?.role === "industry" && material.status === "available" ? (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                addItem(material);
+                pushToast(
+                  "Ditambahkan ke keranjang.",
+                  "success",
+                );
+              }}
+              className="rounded-full border px-5 py-2.5 text-sm font-semibold"
+            >
+              + Keranjang
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push(`${routes.ordersNew}?batchId=${material.id}`)}
+              className="rounded-full bg-[var(--color-leaf-600)] px-5 py-2.5 text-sm font-semibold text-white"
+            >
+              Beli sekarang
+            </button>
+            <Link href={routes.checkout} className="rounded-full bg-[var(--color-forest-900)] px-5 py-2.5 text-sm font-semibold text-white">
+              Checkout
+            </Link>
+          </>
         ) : null}
       </div>
     </main>
@@ -71,7 +94,7 @@ function MaterialDetailContent() {
 
 export function MaterialDetailConnected() {
   return (
-    <RequireAuth roles={["industry", "collector"]}>
+    <RequireAuth>
       <MaterialDetailContent />
     </RequireAuth>
   );
