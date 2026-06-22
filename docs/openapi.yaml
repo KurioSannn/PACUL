@@ -1,0 +1,1326 @@
+openapi: 3.0.0
+paths:
+  /health:
+    get:
+      operationId: AppController_health
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags:
+        - App
+  /traceability/material/{batchId}:
+    get:
+      operationId: TraceabilityController_getMaterialTimeline
+      parameters:
+        - name: batchId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: &a1
+        - bearer: []
+      summary: Get PACUL Track timeline for a material batch
+      tags: &a2
+        - traceability
+  /traceability/waste/{listingId}:
+    get:
+      operationId: TraceabilityController_getWasteListingJourney
+      parameters:
+        - name: listingId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a1
+      summary: Get PACUL Track journey for a waste listing
+      tags: *a2
+  /traceability/order/{orderId}:
+    get:
+      operationId: TraceabilityController_getOrderTimeline
+      parameters:
+        - name: orderId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a1
+      summary: Get PACUL Track timeline for an order
+      tags: *a2
+  /roles/capabilities:
+    get:
+      operationId: AuthController_getCapabilities
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      summary: Get RBAC capabilities map for all roles
+      tags:
+        - auth
+  /ai/classify-waste:
+    post:
+      operationId: AiController_classifyWaste
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassifyWasteDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a3
+        - Ai
+  /ai/classifications/{id}:
+    get:
+      operationId: AiController_getClassification
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+  /ai/classifications/{id}/override:
+    post:
+      operationId: AiController_overrideClassification
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OverrideClassificationDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a3
+  /me:
+    get:
+      operationId: ProfilesController_getMe
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      security: &a4
+        - bearer: []
+      summary: Get authenticated user profile
+      tags: &a5
+        - auth
+  /me/profile:
+    patch:
+      operationId: ProfilesController_updateProfile
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      security: *a4
+      summary: Update role-specific profile fields
+      tags: *a5
+  /auth/complete-profile:
+    post:
+      operationId: ProfilesController_completeProfile
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteProfileDto"
+      responses:
+        "201":
+          description: ""
+      security: *a4
+      summary: Complete onboarding profile after Supabase sign-up
+      tags: *a5
+  /waste-images/upload:
+    post:
+      operationId: WasteImagesController_uploadImage
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: &a6
+        - WasteImages
+  /waste-images/signed-url:
+    get:
+      operationId: WasteImagesController_getSignedUrl
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a6
+  /collector/available-waste:
+    get:
+      operationId: CollectorController_getAvailableWaste
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a7
+        - Collector
+  /collector/handled-categories:
+    get:
+      operationId: CollectorController_getHandledCategories
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+    post:
+      operationId: CollectorController_setHandledCategories
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetHandledCategoriesDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a7
+  /collector/handled-categories/{categoryId}:
+    delete:
+      operationId: CollectorController_removeHandledCategory
+      parameters:
+        - name: categoryId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+  /waste-listings:
+    post:
+      operationId: WasteListingsController_createListing
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWasteListingDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a8
+        - WasteListings
+    get:
+      operationId: WasteListingsController_listListings
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a8
+  /waste-listings/{id}/publish:
+    post:
+      operationId: WasteListingsController_publishListing
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      tags: *a8
+  /waste-listings/{id}/cancel:
+    post:
+      operationId: WasteListingsController_cancelListing
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelListingDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a8
+  /waste-listings/{id}:
+    get:
+      operationId: WasteListingsController_getListingById
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a8
+    patch:
+      operationId: WasteListingsController_updateListing
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWasteListingDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a8
+  /dashboard/summary:
+    get:
+      operationId: DashboardController_getSummary
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      security: &a9
+        - bearer: []
+      summary: Get role-specific dashboard summary metrics
+      tags: &a10
+        - dashboard
+  /dashboard/impact:
+    get:
+      operationId: DashboardController_getPlatformImpact
+      parameters:
+        - name: from
+          required: false
+          in: query
+          schema:
+            format: date
+            example: 2025-01-01
+            type: string
+        - name: to
+          required: false
+          in: query
+          schema:
+            format: date
+            example: 2025-12-31
+            type: string
+        - name: city
+          required: false
+          in: query
+          schema:
+            example: Surabaya
+            type: string
+        - name: province
+          required: false
+          in: query
+          schema:
+            example: Jawa Timur
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a9
+      summary: Get platform-wide impact metrics with optional filters
+      tags: *a10
+  /dashboard/material-flow:
+    get:
+      operationId: DashboardController_getMaterialFlow
+      parameters:
+        - name: from
+          required: false
+          in: query
+          schema:
+            format: date
+            example: 2025-01-01
+            type: string
+        - name: to
+          required: false
+          in: query
+          schema:
+            format: date
+            example: 2025-12-31
+            type: string
+        - name: city
+          required: false
+          in: query
+          schema:
+            example: Surabaya
+            type: string
+        - name: province
+          required: false
+          in: query
+          schema:
+            example: Jawa Timur
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a9
+      summary: Get material flow breakdown by category and region
+      tags: *a10
+  /dashboard/routes:
+    get:
+      operationId: DashboardController_getRouteStats
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      security: *a9
+      summary: Get pickup route statistics for the collector
+      tags: *a10
+  /collector/material-batches:
+    post:
+      operationId: MaterialBatchController_createBatch
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMaterialBatchDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a11
+        - MaterialBatch
+    get:
+      operationId: MaterialBatchController_listCollectorBatches
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a11
+  /collector/material-batches/{id}:
+    get:
+      operationId: MaterialBatchController_getBatch
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a11
+    patch:
+      operationId: MaterialBatchController_updateBatch
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMaterialBatchDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a11
+  /collector/material-batches/{id}/sources:
+    post:
+      operationId: MaterialBatchController_addSourceListings
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSourceListingsDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a11
+  /collector/material-batches/{id}/sorting-complete:
+    post:
+      operationId: MaterialBatchController_markSortingComplete
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      tags: *a11
+  /collector/material-batches/{id}/publish:
+    post:
+      operationId: MaterialBatchController_publishBatch
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      tags: *a11
+  /collector/material-batches/{id}/unavailable:
+    post:
+      operationId: MaterialBatchController_markBatchUnavailable
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      tags: *a11
+  /materials:
+    get:
+      operationId: MaterialsMarketplaceController_getAvailableMaterials
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a12
+        - MaterialsMarketplace
+  /materials/{id}:
+    get:
+      operationId: MaterialsMarketplaceController_getAvailableMaterialById
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a12
+  /negotiations/{id}:
+    get:
+      operationId: NegotiationController_getThread
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: &a13
+        - bearer: []
+      summary: Get negotiation thread detail
+      tags: &a14
+        - negotiations
+  /negotiations/{id}/messages:
+    get:
+      operationId: NegotiationController_getThreadMessages
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 50
+            type: number
+        - name: before
+          required: false
+          in: query
+          description: Cursor for pagination
+          schema:
+            format: date-time
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a13
+      summary: List negotiation messages with pagination
+      tags: *a14
+    post:
+      operationId: NegotiationController_sendTextMessage
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendTextMessageDto"
+      responses:
+        "201":
+          description: ""
+      security: *a13
+      summary: Send a text message in a negotiation thread
+      tags: *a14
+  /negotiations/{id}/offers:
+    post:
+      operationId: NegotiationController_sendOffer
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendOfferDto"
+      responses:
+        "201":
+          description: ""
+      security: *a13
+      summary: Send a price/weight offer or counter-offer
+      tags: *a14
+  /negotiations/{id}/accept:
+    post:
+      operationId: NegotiationController_acceptOffer
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      security: *a13
+      summary: Accept the latest offer in a negotiation
+      tags: *a14
+  /negotiations/{id}/cancel:
+    post:
+      operationId: NegotiationController_cancelNegotiation
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelNegotiationDto"
+      responses:
+        "201":
+          description: ""
+      security: *a13
+      summary: Cancel an active negotiation thread
+      tags: *a14
+  /orders/{orderId}/negotiation:
+    post:
+      operationId: OrderNegotiationController_startNegotiation
+      parameters:
+        - name: orderId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      security: &a15
+        - bearer: []
+      summary: Start negotiation thread for an order
+      tags: &a16
+        - negotiations
+  /orders/{orderId}/negotiation/history:
+    get:
+      operationId: OrderNegotiationController_getNegotiationHistory
+      parameters:
+        - name: orderId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a15
+      summary: Get negotiation history for an order
+      tags: *a16
+  /notifications:
+    get:
+      operationId: NotificationsController_listNotifications
+      parameters:
+        - name: is_read
+          required: false
+          in: query
+          description: Filter by read state
+          schema:
+            type: boolean
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: number
+      responses:
+        "200":
+          description: ""
+      security: &a17
+        - bearer: []
+      summary: List notifications for the current user
+      tags: &a18
+        - notifications
+  /notifications/read-all:
+    patch:
+      operationId: NotificationsController_markAllAsRead
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      security: *a17
+      summary: Mark all notifications as read
+      tags: *a18
+  /notifications/{id}/read:
+    patch:
+      operationId: NotificationsController_markAsRead
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a17
+      summary: Mark a single notification as read
+      tags: *a18
+  /audit-logs:
+    get:
+      operationId: AuditLogsController_listOwnAuditLogs
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      summary: List audit log entries for the current user
+      tags:
+        - notifications
+  /orders:
+    post:
+      operationId: OrderController_createOrder
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderDto"
+      responses:
+        "201":
+          description: ""
+      security: &a19
+        - bearer: []
+      summary: Create a material purchase order (industry)
+      tags: &a20
+        - orders
+    get:
+      operationId: OrderController_listOrders
+      parameters:
+        - name: status
+          required: false
+          in: query
+          description: Filter by order status
+          schema:
+            type: string
+            enum:
+              - created
+              - negotiating
+              - accepted
+              - rejected
+              - cancelled
+              - completed
+      responses:
+        "200":
+          description: ""
+      security: *a19
+      summary: List orders for the authenticated party
+      tags: *a20
+  /orders/{id}:
+    get:
+      operationId: OrderController_getOrder
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a19
+      summary: Get order detail by ID
+      tags: *a20
+  /orders/{id}/status:
+    patch:
+      operationId: OrderController_transitionOrderStatus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrderStatusDto"
+      responses:
+        "200":
+          description: ""
+      security: *a19
+      summary: Transition order status
+      tags: *a20
+  /collector/pickup-claims:
+    post:
+      operationId: PickupClaimController_claimListing
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePickupClaimDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a21
+        - PickupClaim
+    get:
+      operationId: PickupClaimController_getCollectorClaims
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a21
+  /collector/pickup-claims/{id}/status:
+    patch:
+      operationId: PickupClaimController_updateClaimStatus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePickupClaimStatusDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a21
+  /ratings:
+    post:
+      operationId: RatingController_submitRating
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitRatingDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a22
+        - Rating
+  /ratings/summary/{actorId}:
+    get:
+      operationId: RatingController_getRatingSummary
+      parameters:
+        - name: actorId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a22
+  /realtime/channel-auth:
+    post:
+      operationId: RealtimeController_authorizeChannel
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelAuthDto"
+      responses:
+        "201":
+          description: ""
+      tags:
+        - Realtime
+  /reports:
+    get:
+      operationId: ReportController_listExports
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      security: &a23
+        - bearer: []
+      summary: List report export jobs for the current user
+      tags: &a24
+        - reports
+  /reports/export/pdf:
+    post:
+      operationId: ReportController_exportPdf
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportPdfDto"
+      responses:
+        "201":
+          description: ""
+      security: *a23
+      summary: Request a PDF impact report export
+      tags: *a24
+  /reports/export/excel:
+    post:
+      operationId: ReportController_exportExcel
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportExcelDto"
+      responses:
+        "201":
+          description: ""
+      security: *a23
+      summary: Request an Excel report export
+      tags: *a24
+  /reports/{id}/download:
+    get:
+      operationId: ReportController_downloadExport
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a23
+      summary: Get a signed download URL for a completed export
+      tags: *a24
+  /reports/{id}:
+    get:
+      operationId: ReportController_getExport
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security: *a23
+      summary: Get export job status and metadata
+      tags: *a24
+  /routes/preview:
+    post:
+      operationId: RoutesController_previewRoute
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoutePreviewDto"
+      responses:
+        "201":
+          description: ""
+      tags: &a25
+        - Routes
+  /routes:
+    post:
+      operationId: RoutesController_commitRoute
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommitRouteDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a25
+  /routes/{id}:
+    get:
+      operationId: RoutesController_getRouteById
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a25
+  /routes/{id}/status:
+    patch:
+      operationId: RoutesController_updateRouteStatus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRouteStatusDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a25
+  /routes/{id}/stops/{stopId}/status:
+    patch:
+      operationId: RoutesController_updateStopStatus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: stopId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStopStatusDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a25
+  /routes/{id}/recalculate:
+    post:
+      operationId: RoutesController_recalculateRoute
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      tags: *a25
+  /transactions:
+    get:
+      operationId: TransactionController_listTransactions
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a26
+        - Transaction
+  /transactions/{id}/complete:
+    post:
+      operationId: TransactionController_completeTransaction
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      tags: *a26
+  /orders/{id}/transactions/simulate:
+    post:
+      operationId: OrderTransactionController_simulateTransaction
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      tags:
+        - OrderTransaction
+  /waste-categories:
+    get:
+      operationId: WasteCategoriesController_listActiveCategories
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags:
+        - WasteCategories
+info:
+  title: PACUL Backend API
+  description: REST API for the PACUL circular waste marketplace (hackathon MVP).
+  version: 1.0.0-hackathon
+  contact: {}
+tags: []
+servers:
+  - url: http://localhost:4000
+    description: Local development
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+      description: Supabase access token from sign-in
+  schemas:
+    ClassifyWasteDto:
+      type: object
+      properties: {}
+    OverrideClassificationDto:
+      type: object
+      properties: {}
+    CompleteProfileDto:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - household
+            - collector
+            - industry
+        displayName:
+          type: string
+          example: Budi Santoso
+        phone:
+          type: string
+          example: "+6281234567890"
+        avatarUrl:
+          type: string
+          format: uri
+      required:
+        - role
+        - displayName
+    SetHandledCategoriesDto:
+      type: object
+      properties: {}
+    CreateWasteListingDto:
+      type: object
+      properties: {}
+    CancelListingDto:
+      type: object
+      properties: {}
+    UpdateWasteListingDto:
+      type: object
+      properties: {}
+    CreateMaterialBatchDto:
+      type: object
+      properties: {}
+    UpdateMaterialBatchDto:
+      type: object
+      properties: {}
+    AddSourceListingsDto:
+      type: object
+      properties: {}
+    SendTextMessageDto:
+      type: object
+      properties:
+        content:
+          type: string
+          maxLength: 5000
+          example: Can you deliver within 3 days?
+      required:
+        - content
+    SendOfferDto:
+      type: object
+      properties:
+        price_per_kg:
+          type: number
+          example: 3200
+          minimum: 0.001
+          description: Offered price per kg in IDR
+        weight_kg:
+          type: number
+          example: 80
+          minimum: 0.001
+          description: Offered weight in kg
+      required:
+        - price_per_kg
+        - weight_kg
+    CancelNegotiationDto:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+          description: Optional cancellation reason
+    CreateOrderDto:
+      type: object
+      properties:
+        batchId:
+          type: string
+          format: uuid
+          description: Material batch to purchase
+        requested_weight_kg:
+          type: number
+          example: 100
+          minimum: 0.001
+          description: Requested weight in kg
+        offered_price_per_kg:
+          type: number
+          example: 3500
+          minimum: 0
+          description: Offered price per kg in IDR
+        notes:
+          type: string
+          maxLength: 1000
+          description: Optional order notes
+      required:
+        - batchId
+        - requested_weight_kg
+        - offered_price_per_kg
+    UpdateOrderStatusDto:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - negotiating
+            - accepted
+            - rejected
+            - cancelled
+            - completed
+          description: Target order status
+        cancel_reason:
+          type: string
+          maxLength: 1000
+          description: Required when cancelling
+        final_price_per_kg:
+          type: number
+          minimum: 0
+          description: Final agreed price per kg in IDR
+        final_weight_kg:
+          type: number
+          minimum: 0.001
+          description: Final agreed weight in kg
+      required:
+        - status
+    CreatePickupClaimDto:
+      type: object
+      properties: {}
+    UpdatePickupClaimStatusDto:
+      type: object
+      properties: {}
+    SubmitRatingDto:
+      type: object
+      properties: {}
+    ChannelAuthDto:
+      type: object
+      properties: {}
+    ExportPdfDto:
+      type: object
+      properties:
+        from_date:
+          type: string
+          format: date-time
+          example: 2025-01-01T00:00:00.000Z
+        to_date:
+          type: string
+          format: date-time
+          example: 2025-12-31T23:59:59.999Z
+        city:
+          type: string
+          maxLength: 120
+          example: Surabaya
+    ExportExcelDto:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - transactions
+            - materials
+            - routes
+          description: Excel report type to generate
+        from_date:
+          type: string
+          format: date-time
+        to_date:
+          type: string
+          format: date-time
+      required:
+        - type
+    RoutePreviewDto:
+      type: object
+      properties: {}
+    CommitRouteDto:
+      type: object
+      properties: {}
+    UpdateRouteStatusDto:
+      type: object
+      properties: {}
+    UpdateStopStatusDto:
+      type: object
+      properties: {}
