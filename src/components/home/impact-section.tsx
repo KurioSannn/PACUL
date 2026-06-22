@@ -26,7 +26,7 @@ const flowLayers = [
 
 export function ImpactSection() {
   return (
-    <section className="border-t border-border bg-white" id="alur" aria-labelledby="impact-title">
+    <section className="border-t border-border bg-white" id="fitur" aria-labelledby="impact-title">
       <div className="landing-shell py-20 sm:py-24 lg:py-28">
         <div className="mx-auto max-w-3xl text-center">
           <p className="eyebrow">Alur tiga lapis</p>

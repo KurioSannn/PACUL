@@ -8,7 +8,7 @@ export function JoinCtaSection() {
     <section className="bg-white pb-5 sm:pb-8" aria-labelledby="join-title">
       <div className="landing-shell">
         <div className="relative overflow-hidden rounded-[1.75rem] bg-[var(--color-forest-950)] px-6 py-14 text-center text-white sm:px-10 sm:py-16 lg:px-16 lg:py-20">
-          <div aria-hidden="true" className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_center,transparent_0,transparent_22%,#2e9e63_22.3%,transparent_22.7%,transparent_36%,#2e9e63_36.3%,transparent_36.7%,transparent_50%,#2e9e63_50.3%,transparent_50.7%)]" />
+          <div aria-hidden="true" className="animate-cta-wave absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_center,transparent_0,transparent_22%,#2e9e63_22.3%,transparent_22.7%,transparent_36%,#2e9e63_36.3%,transparent_36.7%,transparent_50%,#2e9e63_50.3%,transparent_50.7%)]" />
           <div className="relative mx-auto max-w-3xl">
             <span className="mx-auto inline-flex size-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[#a9dfbd]">
               <Recycle className="size-5" aria-hidden="true" />

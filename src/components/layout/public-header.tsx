@@ -5,17 +5,17 @@ import { Bell, LogOut, Menu, MessageCircle, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/auth-context";
-import { getHeaderNav, getPrimaryCta, showMessagesLink } from "@/lib/role-navigation";
+import { getHeaderNav, showMessagesLink } from "@/lib/role-navigation";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { useActiveSection } from "@/hooks/use-active-section";
 
 const publicNav = [
-  { href: "#alur", label: "Alur" },
-  { href: "#marketplace", label: "Marketplace" },
-  { href: routes.demo, label: "Demo" },
-  { href: routes.deployReadiness, label: "Status" },
+  { href: "/#fitur", label: "Fitur", id: "fitur" },
+  { href: "/#cara-kerja", label: "Cara Kerja", id: "cara-kerja" },
+  { href: routes.marketplace, label: "Marketplace", id: "marketplace-page" },
 ];
 
 export function PublicHeader() {
@@ -23,12 +23,9 @@ export function PublicHeader() {
   const router = useRouter();
   const { accessToken, profile, signOut, isLoading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
+  const activeSection = useActiveSection(["fitur", "cara-kerja"]);
 
   const isLoggedIn = Boolean(accessToken && profile);
-  const navItems = isLoggedIn
-    ? getHeaderNav(profile?.role, true)
-    : publicNav.map((item) => ({ href: item.href.startsWith("#") ? `${routes.home}${item.href}` : item.href, label: item.label }));
-  const primaryCta = getPrimaryCta(profile?.role, isLoggedIn);
 
   useEffect(() => {
     const onScroll = () => {
@@ -56,12 +53,22 @@ export function PublicHeader() {
     router.replace(routes.authLogin);
   };
 
-  const linkClass = cn(
-    "rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300",
-    scrolled
-      ? "!text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)] hover:text-[var(--color-leaf-700)]"
-      : "!text-white hover:bg-white/15",
-  );
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith("/#") && pathname === routes.home) {
+      e.preventDefault();
+      const id = href.replace("/#", "");
+      const element = document.getElementById(id);
+      if (element) {
+        const headerOffset = 72;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.scrollY - headerOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth"
+        });
+      }
+    }
+  };
 
   const iconClass = cn(
     "relative inline-flex size-9 items-center justify-center rounded-full transition-colors",
@@ -81,7 +88,7 @@ export function PublicHeader() {
     >
       <nav className="landing-shell flex h-[72px] items-center justify-between">
         <Link
-          href={isLoggedIn ? routes.dashboard : routes.home}
+          href={routes.home}
           className={cn(
             "inline-flex items-center gap-2 rounded-xl p-1.5 font-semibold tracking-tight transition-colors",
             scrolled ? "hover:bg-[var(--color-mint-100)]" : "hover:bg-white/10",
@@ -97,15 +104,32 @@ export function PublicHeader() {
           />
         </Link>
 
-        <div className="hidden items-center gap-1.5 md:flex">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className={linkClass}>
-              {item.label}
-            </Link>
-          ))}
+        {/* Desktop Nav */}
+        <div className="hidden items-center gap-2 md:flex">
+          {(isLoggedIn ? getHeaderNav(profile?.role, true) : publicNav).map((item) => {
+            const isAnchor = "id" in item;
+            const isActive = isAnchor ? activeSection === item.id : (pathname === item.href && item.href !== "/");
+            return (
+              <Link 
+                key={item.href} 
+                href={item.href} 
+                onClick={(e) => handleScroll(e, item.href)}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm transition-all duration-300",
+                  isActive ? "font-bold" : "font-semibold",
+                  scrolled
+                    ? "!text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)] hover:!text-[var(--color-leaf-700)]"
+                    : "!text-white hover:bg-white/15"
+                )}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
         </div>
 
-        <div className="hidden items-center gap-1 md:flex">
+        {/* Right Nav (Auth / User) */}
+        <div className="hidden items-center gap-2 md:flex">
           {isLoggedIn && showMessagesLink(profile?.role) ? (
             <Link href={routes.messages} className={iconClass} aria-label="Pesan">
               <MessageCircle className="size-[18px]" aria-hidden="true" />
@@ -116,112 +140,143 @@ export function PublicHeader() {
               <Bell className="size-[18px]" aria-hidden="true" />
             </Link>
           ) : null}
-        </div>
 
-        <div className="hidden items-center gap-2.5 md:flex">
           {isLoading ? (
-            <span className={cn("text-sm", scrolled ? "text-[var(--color-ink-500)]" : "text-white/70")}>...</span>
+            <span className={cn("text-sm ml-2", scrolled ? "text-[var(--color-ink-500)]" : "text-white/70")}>...</span>
           ) : isLoggedIn ? (
-            <>
-              <Link href={routes.profile} className={linkClass}>
+            <div className="flex items-center gap-2 ml-1">
+              <Link href={routes.profile} className={cn("rounded-full px-4 py-2 text-sm font-semibold transition-all", scrolled ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]" : "text-white hover:bg-white/15")}>
                 <span className="inline-flex items-center gap-2">
                   <User className="size-4" aria-hidden="true" />
                   {profile?.display_name ?? "Profil"}
                 </span>
               </Link>
-              <button type="button" onClick={() => void handleSignOut()} className={linkClass} aria-label="Keluar">
+              <button type="button" onClick={() => void handleSignOut()} className={cn("rounded-full px-3 py-2 text-sm font-semibold transition-all", scrolled ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]" : "text-white hover:bg-white/15")} aria-label="Keluar">
                 <LogOut className="size-4" aria-hidden="true" />
               </button>
-            </>
+            </div>
           ) : (
-            <Link
-              href={routes.authLogin}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 border",
-                scrolled
-                  ? "border-[var(--color-line)] !text-[var(--color-forest-900)] hover:bg-[var(--color-sage-50)]"
-                  : "border-white/30 bg-transparent !text-white hover:bg-white/15 hover:border-white/60",
-              )}
-            >
-              Masuk
-            </Link>
+            <div className="flex items-center gap-2 ml-2">
+              <Link
+                href={routes.authLogin}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 border",
+                  scrolled
+                    ? "border-[var(--color-line)] !text-[var(--color-forest-900)] hover:bg-[var(--color-sage-50)]"
+                    : "border-white/30 bg-transparent !text-white hover:bg-white/15 hover:border-white/60",
+                )}
+              >
+                Masuk
+              </Link>
+              <Link
+                href={routes.authRegister}
+                className={cn(
+                  "rounded-full px-4.5 py-2 text-sm font-semibold transition-all duration-300 shadow-[0_1px_2px_rgba(0,0,0,0.08)]",
+                  scrolled
+                    ? "bg-[var(--color-leaf-600)] !text-white hover:bg-[var(--color-leaf-700)]"
+                    : "bg-white !text-[var(--color-forest-900)] hover:bg-white/90",
+                )}
+              >
+                Daftar Gratis
+              </Link>
+            </div>
           )}
-          <Link
-            href={primaryCta.href}
-            className={cn(
-              "rounded-full px-4.5 py-2 text-sm font-semibold transition-all duration-300 shadow-[0_1px_2px_rgba(0,0,0,0.08)]",
-              scrolled
-                ? "bg-[var(--color-leaf-600)] !text-white hover:bg-[var(--color-leaf-700)]"
-                : "bg-white !text-[var(--color-forest-900)] hover:bg-white/90",
-            )}
-          >
-            {primaryCta.label}
-          </Link>
         </div>
 
+        {/* Mobile Nav */}
         <div className="flex items-center gap-1.5 md:hidden">
           {isLoggedIn ? (
             <Link href={routes.profile} className={iconClass} aria-label="Profil">
               <User className="size-[18px]" aria-hidden="true" />
             </Link>
           ) : null}
-          <Link
-            href={primaryCta.href}
-            className={cn(
-              "rounded-full px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all duration-300",
-              scrolled
-                ? "bg-[var(--color-leaf-600)] text-white hover:bg-[var(--color-leaf-700)]"
-                : "bg-white text-[var(--color-forest-900)] hover:bg-white/90",
-            )}
-          >
-            {primaryCta.label}
-          </Link>
+          {!isLoggedIn && (
+            <Link
+              href={routes.authRegister}
+              className={cn(
+                "rounded-full px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all duration-300",
+                scrolled
+                  ? "bg-[var(--color-leaf-600)] text-white hover:bg-[var(--color-leaf-700)]"
+                  : "bg-white text-[var(--color-forest-900)] hover:bg-white/90",
+              )}
+            >
+              Daftar Gratis
+            </Link>
+          )}
           <Sheet>
             <SheetTrigger
               className={cn(
                 "inline-flex size-9 items-center justify-center rounded-full border text-sm transition-colors duration-300",
                 scrolled
                   ? "border-[var(--color-line)] bg-white text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]"
-                  : "border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white",
+                  : "border-white/20 bg-transparent text-white hover:bg-white/10",
               )}
               aria-label="Buka navigasi"
             >
               <Menu className="size-5" aria-hidden="true" />
             </SheetTrigger>
             <SheetContent side="right" className="w-[min(86vw,22rem)] border-[var(--color-line)] bg-white p-0">
-              <SheetHeader className="border-b border-[var(--color-line)] p-4">
-                <SheetTitle className="text-[var(--color-forest-900)]">PACUL</SheetTitle>
+              <SheetHeader className="border-b border-[var(--color-line)] p-4 text-left">
+                <SheetTitle className="text-[var(--color-forest-900)]">Menu PACUL</SheetTitle>
                 <SheetDescription>
                   {isLoggedIn ? `Masuk sebagai ${profile?.display_name ?? profile?.role}` : "Marketplace daur ulang tiga lapis"}
                 </SheetDescription>
               </SheetHeader>
               <nav className="grid gap-1 p-4" aria-label="Navigasi mobile">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="rounded-full px-4 py-3 text-sm font-semibold text-[var(--color-forest-900)] transition-colors hover:bg-[var(--color-mint-100)] hover:text-[var(--color-leaf-700)]"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+                {(isLoggedIn ? getHeaderNav(profile?.role, true) : publicNav).map((item) => {
+                  const isAnchor = "id" in item;
+                  const isActive = isAnchor ? activeSection === item.id : (pathname === item.href && item.href !== "/");
+                  return (
+                    <SheetClose 
+                      key={item.href}
+                      render={
+                        <Link
+                          href={item.href}
+                          onClick={(e) => handleScroll(e, item.href)}
+                          className={cn(
+                            "rounded-xl px-4 py-3 text-sm transition-colors",
+                            isActive ? "font-bold text-[var(--color-leaf-700)] bg-[var(--color-sage-50)]" : "font-semibold text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)] hover:text-[var(--color-leaf-700)]"
+                          )}
+                        />
+                      }
+                    >
+                      {item.label}
+                    </SheetClose>
+                  );
+                })}
               </nav>
-              <div className="grid gap-2 border-t border-[var(--color-line)] p-4">
+              <div className="grid gap-3 border-t border-[var(--color-line)] p-4 mt-auto">
                 {isLoggedIn ? (
                   <button
                     type="button"
                     onClick={() => void handleSignOut()}
-                    className="rounded-full border border-[var(--color-line)] px-4 py-2.5 text-center text-sm font-semibold text-[var(--color-forest-900)]"
+                    className="w-full rounded-full border border-[var(--color-line)] px-4 py-2.5 text-center text-sm font-semibold text-[var(--color-forest-900)] hover:bg-[var(--color-sage-50)]"
                   >
                     Keluar
                   </button>
                 ) : (
-                  <Link
-                    href={routes.authLogin}
-                    className="rounded-full border border-[var(--color-line)] px-4 py-2.5 text-center text-sm font-semibold text-[var(--color-forest-900)]"
-                  >
-                    Masuk
-                  </Link>
+                  <>
+                    <SheetClose 
+                      render={
+                        <Link
+                          href={routes.authLogin}
+                          className="w-full rounded-full border border-[var(--color-line)] px-4 py-2.5 text-center text-sm font-semibold text-[var(--color-forest-900)] hover:bg-[var(--color-sage-50)]"
+                        />
+                      }
+                    >
+                      Masuk
+                    </SheetClose>
+                    <SheetClose 
+                      render={
+                        <Link
+                          href={routes.authRegister}
+                          className="w-full rounded-full bg-[var(--color-leaf-600)] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[var(--color-leaf-700)] shadow-sm"
+                        />
+                      }
+                    >
+                      Daftar Gratis
+                    </SheetClose>
+                  </>
                 )}
               </div>
             </SheetContent>

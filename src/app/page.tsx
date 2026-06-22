@@ -5,6 +5,7 @@ import { ImpactSection } from "@/components/home/impact-section";
 import { JoinCtaSection } from "@/components/home/join-cta-section";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 export default function HomePage() {
   return (
@@ -12,10 +13,18 @@ export default function HomePage() {
       <PublicHeader />
       <main className="grow">
         <PaculHero />
-        <ImpactSection />
-        <MarketplacePreviewSection />
-        <EcosystemPartners />
-        <JoinCtaSection />
+        <ScrollReveal>
+          <ImpactSection />
+        </ScrollReveal>
+        <ScrollReveal>
+          <MarketplacePreviewSection />
+        </ScrollReveal>
+        <ScrollReveal>
+          <EcosystemPartners />
+        </ScrollReveal>
+        <ScrollReveal>
+          <JoinCtaSection />
+        </ScrollReveal>
       </main>
       <PublicFooter />
     </div>

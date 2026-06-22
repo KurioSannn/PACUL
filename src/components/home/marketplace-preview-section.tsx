@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Box, PackageOpen, Recycle } from "lucide-react";
 
 import { routes } from "@/lib/routes";
@@ -13,6 +14,7 @@ const layers = [
     href: routes.authLogin,
     cta: "Masuk sebagai rumah tangga",
     tone: "mint" as const,
+    bgImage: "/11.png",
   },
   {
     id: "collector",
@@ -23,6 +25,7 @@ const layers = [
     href: routes.authLogin,
     cta: "Masuk sebagai pengepul",
     tone: "sand" as const,
+    bgImage: "/13.png",
   },
   {
     id: "industry",
@@ -33,12 +36,13 @@ const layers = [
     href: routes.authLogin,
     cta: "Masuk sebagai industri",
     tone: "mint" as const,
+    bgImage: "/12.png",
   },
 ];
 
 export function MarketplacePreviewSection() {
   return (
-    <section className="border-t border-border bg-[var(--color-sage-50)]" id="marketplace" aria-labelledby="marketplace-title">
+    <section className="border-t border-border bg-[var(--color-sage-50)]" id="cara-kerja" aria-labelledby="marketplace-title">
       <div className="landing-shell py-20 sm:py-24 lg:py-28">
         <div className="mx-auto max-w-3xl text-center">
           <p className="eyebrow">Marketplace Tiga Lapis</p>
@@ -57,34 +61,41 @@ export function MarketplacePreviewSection() {
           {layers.map((item) => {
             const Icon = item.icon;
             return (
-              <article key={item.id} className="overflow-hidden rounded-[1.6rem] border border-[var(--color-line)] bg-white">
-                <div className="p-6 sm:p-8">
-                  <span className="inline-flex size-11 items-center justify-center rounded-xl bg-[var(--color-mint-100)] text-[var(--color-leaf-700)]">
-                    <Icon className="size-5" aria-hidden="true" />
-                  </span>
-                  <h3 className="mt-6 text-xl font-semibold tracking-tight text-[var(--color-forest-900)]">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-[var(--color-ink-700)]">{item.description}</p>
-                  <Link
-                    href={item.href}
-                    className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-line)] px-5 text-sm font-semibold text-[var(--color-forest-900)] transition-colors hover:bg-[var(--color-sage-50)]"
-                  >
-                    {item.cta}
-                    <ArrowRight className="size-4" aria-hidden="true" />
-                  </Link>
+              <article key={item.id} className="overflow-hidden rounded-[1.6rem] border border-[var(--color-line)] bg-white flex flex-col">
+                <div className="group relative flex min-h-[380px] flex-col justify-end overflow-hidden p-6 sm:p-8">
+                  {/* Background Image */}
+                  <Image
+                    src={item.bgImage}
+                    alt={item.title}
+                    fill
+                    className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                  />
+                  {/* Subtle bottom gradient to ensure text readability without darkening the whole image */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 transition-opacity duration-500 ease-out group-hover:opacity-100" />
+                  
+                  {/* Content over image */}
+                  <div className="relative z-10 flex flex-col items-start mt-auto">
+                    <span className="inline-flex size-11 items-center justify-center rounded-xl bg-black/40 text-white border border-white/20">
+                      <Icon className="size-5" aria-hidden="true" />
+                    </span>
+                    <h3 className="mt-6 text-xl font-bold tracking-tight text-white">{item.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-white">{item.description}</p>
+                    <Link
+                      href={item.href}
+                      className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/50 bg-black/40 px-5 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-black active:scale-95"
+                    >
+                      {item.cta}
+                      <ArrowRight className="size-4" aria-hidden="true" />
+                    </Link>
+                  </div>
                 </div>
-                <div
-                  className={
-                    item.tone === "mint"
-                      ? "border-t border-[var(--color-line)] bg-[var(--color-mint-100)] p-5 sm:p-6"
-                      : "border-t border-[var(--color-line)] bg-[#f7f3e9] p-5 sm:p-6"
-                  }
-                >
+                <div className="border-t border-[var(--color-line)] bg-white p-5 sm:p-6">
                   <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-ink-500)]">Contoh</p>
                   <ul className="mt-4 grid grid-cols-2 gap-2" aria-label={`Contoh ${item.title.toLowerCase()}`}>
                     {item.examples.map((example) => (
                       <li
                         key={example}
-                        className="rounded-xl border border-white/80 bg-white/80 px-3 py-3 text-sm font-medium text-[var(--color-forest-800)]"
+                        className="rounded-xl border border-[var(--color-line)] bg-white px-3 py-3 text-sm font-medium text-[var(--color-forest-900)] shadow-sm"
                       >
                         {example}
                       </li>

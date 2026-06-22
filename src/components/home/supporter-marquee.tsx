@@ -1,32 +1,29 @@
-const demoSupporters = [
-  { name: "Sirkula", initials: "SK", shape: "circle" },
-  { name: "Hijau Lab", initials: "HL", shape: "diamond" },
-  { name: "Material Works", initials: "MW", shape: "square" },
-  { name: "Rantai Baik", initials: "RB", shape: "circle" },
-  { name: "Kolektif Bumi", initials: "KB", shape: "diamond" },
-  { name: "Ruang Pulih", initials: "RP", shape: "square" },
-];
+import Image from "next/image";
 
-function DemoLogo({ initials, shape }: { initials: string; shape: string }) {
-  return (
-    <svg viewBox="0 0 44 44" className="size-9 shrink-0" aria-hidden="true">
-      {shape === "circle" ? <circle cx="22" cy="22" r="18" fill="currentColor" opacity="0.12" /> : null}
-      {shape === "diamond" ? <path d="M22 3 41 22 22 41 3 22Z" fill="currentColor" opacity="0.12" /> : null}
-      {shape === "square" ? <rect x="4" y="4" width="36" height="36" rx="11" fill="currentColor" opacity="0.12" /> : null}
-      <text x="22" y="25" textAnchor="middle" fill="currentColor" fontSize="10" fontWeight="800">
-        {initials}
-      </text>
-    </svg>
-  );
-}
+const demoSupporters = [
+  { name: "Sirkula", image: "/3.png" },
+  { name: "Hijau Lab", image: "/4.png" },
+  { name: "Material Works", image: "/5.png" },
+  { name: "Rantai Baik", image: "/6.png" },
+  { name: "Kolektif Bumi", image: "/7.png" },
+  { name: "Ruang Pulih", image: "/8.png" },
+  { name: "PlayIT", image: "/9.png" },
+  { name: "PlayIT Mark", image: "/10.png" },
+];
 
 function SupporterList({ hidden = false }: { hidden?: boolean }) {
   return (
     <ul className="supporter-marquee-group" aria-hidden={hidden || undefined}>
       {demoSupporters.map((supporter) => (
-        <li key={supporter.name} className="flex min-w-48 items-center gap-3 rounded-2xl border border-[var(--color-line)] bg-white px-5 py-4 text-[var(--color-forest-800)]">
-          <DemoLogo initials={supporter.initials} shape={supporter.shape} />
-          <span className="whitespace-nowrap text-sm font-semibold">{supporter.name}</span>
+        <li key={supporter.name} className="flex shrink-0 items-center justify-center px-6">
+          <div className="relative h-[4.5rem] w-36 md:h-[5.5rem] md:w-44">
+            <Image
+              src={supporter.image}
+              alt={`${supporter.name} logo`}
+              fill
+              className="object-contain"
+            />
+          </div>
         </li>
       ))}
     </ul>

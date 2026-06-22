@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { ArrowRight, Leaf } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, AnimatePresence } from "motion/react";
+import { useState, useEffect } from "react";
 
 import { VideoBackdrop } from "@/components/media/video-backdrop";
 import { routes } from "@/lib/routes";
@@ -10,9 +11,24 @@ import { slideUp, staggerContainer } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
+const heroLines = [
+  "Sampah rumah tangga jadi bahan baku bernilai.",
+  "Tiga aktor, satu alur daur ulang.",
+  "Dari tong sampah ke rantai pasok industri.",
+];
+
 export function PaculHero() {
   const prefersReducedMotion = useReducedMotion();
   const initial = prefersReducedMotion ? undefined : "hidden";
+  const [lineIndex, setLineIndex] = useState(0);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const interval = setInterval(() => {
+      setLineIndex((prev) => (prev + 1) % heroLines.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [prefersReducedMotion]);
 
   return (
     <section
@@ -56,7 +72,7 @@ export function PaculHero() {
           {/* Badge pill */}
           <motion.a
             variants={slideUp}
-            href="#alur"
+            href="#fitur"
             className="group mx-auto flex w-fit items-center gap-3 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/80 shadow-sm backdrop-blur-sm transition-all hover:bg-white/10"
           >
             <Leaf className="size-3 text-[var(--color-leaf-500)]" />
@@ -65,14 +81,24 @@ export function PaculHero() {
             <ArrowRight className="size-3 transition-transform duration-150 ease-out group-hover:translate-x-0.5" />
           </motion.a>
 
-          {/* Headline */}
-          <motion.h1
+          {/* Rotating Headline */}
+          <motion.div
             variants={slideUp}
-            className="max-w-3xl text-balance text-center text-4xl font-semibold tracking-tight text-white md:text-5xl lg:text-6xl"
+            className="relative h-[4.5rem] sm:h-[5rem] md:h-[5.5rem] lg:h-[7rem] w-full max-w-3xl overflow-hidden"
           >
-            Sampah rumah tangga ke <br className="hidden sm:block" />
-            rantai daur ulang yang bisa ditelusuri.
-          </motion.h1>
+            <AnimatePresence mode="wait">
+              <motion.h1
+                key={lineIndex}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -30 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+                className="absolute inset-0 flex items-center justify-center text-balance text-center text-4xl font-semibold tracking-tight text-white md:text-5xl lg:text-6xl"
+              >
+                {heroLines[lineIndex]}
+              </motion.h1>
+            </AnimatePresence>
+          </motion.div>
 
           {/* Sub-copy */}
           <motion.p
@@ -89,23 +115,17 @@ export function PaculHero() {
             className="flex flex-row flex-wrap items-center justify-center gap-3 pt-2"
           >
             <Link
-              href="#alur"
-              className={cn(
-                buttonVariants({ variant: "secondary", size: "lg" }),
-                "rounded-full",
-              )}
+              href="#fitur"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/30 px-6 text-sm font-semibold text-white transition-colors hover:bg-white/10"
             >
               Lihat Alur
             </Link>
             <Link
               href={routes.listingsNew}
-              className={cn(
-                buttonVariants({ variant: "primary", size: "lg" }),
-                "rounded-full",
-              )}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-leaf-600)] px-6 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-leaf-700)]"
             >
               Buat Listing
-              <ArrowRight className="ml-2 size-4" data-icon="inline-end" />
+              <ArrowRight className="size-4" data-icon="inline-end" />
             </Link>
           </motion.div>
         </motion.div>
@@ -113,3 +133,4 @@ export function PaculHero() {
     </section>
   );
 }
+
