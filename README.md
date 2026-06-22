@@ -1,26 +1,88 @@
-# Pacul
+# PACUL Frontend Foundation
 
 ## Overview
+PACUL adalah marketplace daur ulang tiga lapis untuk Rumah Tangga, Pengepul, dan Industri Pengolah. Repository ini sekarang berfokus pada fondasi frontend yang menyiapkan seluruh route MVP dan bonus, lengkap dengan shell dashboard, mock data, state UI, dan titik integrasi yang jelas.
 
-Pacul adalah fondasi frontend untuk marketplace daur ulang yang menghubungkan Rumah Tangga, Pengepul, dan Industri Pengolah. Block 1 hanya menyiapkan struktur, sistem visual, komponen dasar, type contract, dan data demo kecil.
+## Frontend Scope
+Frontend block ini menyiapkan struktur penuh agar fitur wajib MVP dan bonus pembeda punya route, UI shell, placeholder page, dan contract data yang rapi. Backend production tetap berada di branch backend: Supabase, auth production, storage, realtime, AI classification production, dan export production belum diimplementasikan di block ini.
 
-## Features
+## MVP Feature Coverage
+- Auth and RBAC
+- CRUD listing and waste master
+- Pickup map and route
+- Waste image classification
+- Sell, pickup, sort, material flow
+- Order, negotiation, transaction
+- Three-layer marketplace and dashboard
+- Public deploy readiness
 
-- Next.js App Router dengan TypeScript.
-- Token desain hijau natural dari `DESIGN .md`.
-- Komponen UI dasar: Button, Card, Badge, StatusPill, EmptyState, LoadingState, dan ErrorState.
-- Type contract untuk listing sampah dan stok bahan baku.
-- Landing placeholder dengan preview alur tiga peran dan state dasar.
+## Bonus Feature Coverage
+- Route optimization
+- Realtime negotiation chat and history
+- Material traceability
+- Rating and review
+- Impact dashboard
+- PDF/Excel report export
+
+## Route Map
+Public and auth:
+- `/`
+- `/auth/login`
+- `/auth/register`
+- `/auth/role`
+
+Dashboard:
+- `/dashboard`
+- `/dashboard/household`
+- `/dashboard/collector`
+- `/dashboard/industry`
+
+Marketplace and master data:
+- `/marketplace/waste`
+- `/marketplace/materials`
+- `/listings/new`
+- `/listings/[id]`
+- `/listings/[id]/edit`
+- `/master/waste-categories`
+
+Pickup and collector flow:
+- `/pickup/routes`
+- `/pickup/[id]`
+- `/pickup/optimizer`
+- `/collector/pickups`
+- `/collector/sorting`
+- `/collector/materials/new`
+
+Classification:
+- `/classification/demo`
+
+Orders and transactions:
+- `/orders`
+- `/orders/new`
+- `/negotiations`
+- `/negotiations/[id]`
+- `/negotiations/[id]/chat`
+- `/transactions/[id]`
+
+Bonus and support:
+- `/traceability/[materialId]`
+- `/reviews`
+- `/reviews/new`
+- `/impact`
+- `/reports`
+- `/deploy-readiness`
 
 ## Tech Stack
-
-- Next.js 15
+- Next.js 15 App Router
 - React 19
 - TypeScript
 - npm
+- Tailwind CSS v4 with `@tailwindcss/postcss`
+
+## Tailwind CSS
+Tailwind CSS sekarang tersedia dan terpasang melalui `tailwindcss` dan `@tailwindcss/postcss`. Global CSS ada di `src/app/globals.css` dan diimpor dari root layout.
 
 ## Getting Started
-
 ```bash
 npm install
 npm run dev
@@ -29,31 +91,18 @@ npm run dev
 Buka `http://localhost:3000`.
 
 ## Available Scripts
-
-- `npm run dev`: menjalankan development server Next.js.
+- `npm run dev`: menjalankan development server.
 - `npm run build`: membuat production build.
 - `npm run start`: menjalankan production build.
-- `npm run typecheck`: memeriksa type TypeScript tanpa menghasilkan file output.
-
-## Project Structure
-
-```txt
-src/
-  app/                 App Router dan global CSS
-  components/ui/       Komponen UI dasar
-  data/                Mock data kecil untuk MVP
-  lib/                 Constants, formatter, routes, dan utilities
-  types/               Type contract domain Pacul
-```
+- `npm run typecheck`: menjalankan TypeScript typecheck tanpa emit.
 
 ## Demo Data
+Semua halaman skeleton memakai mock data dari `src/data/mock-pacul.ts`. Data tersebut hanya placeholder untuk membangun UI dan alur, bukan data produksi.
 
-Listing dan stok yang tampil adalah data demo kecil untuk memperlihatkan kontrak frontend. Data tersebut bukan data produksi dan belum berasal dari backend.
-
-## Block 1 Scope
-
-Block ini hanya frontend foundation. Dashboard final, marketplace final, upload sampah, autentikasi, Supabase, storage, AI classification production, negosiasi, dan transaksi belum diimplementasikan.
+## Backend Integration Notes
+Integrasi produksi untuk Supabase, auth, storage, AI classification, realtime negotiation chat, dan export laporan masih pending dan akan dihubungkan dari branch backend.
 
 ## Notes
-
-Dependency audit npm saat ini melaporkan dua kerentanan moderat pada dependency transitif. Hindari `npm audit fix --force` tanpa menilai perubahan breaking terlebih dahulu.
+- Arah visual mengikuti desain hijau natural, clean, dan operasional dari `DESIGN .md`.
+- Route skeleton dibangun agar tidak ada halaman kosong saat dikembangkan bertahap.
+- Tidak ada env baru yang ditambahkan pada block ini.
