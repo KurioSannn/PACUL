@@ -31,11 +31,15 @@ Public and auth:
 - `/auth/register`
 - `/auth/role`
 
-Dashboard:
+Dashboard and Household:
 - `/dashboard`
 - `/dashboard/household`
 - `/dashboard/collector`
 - `/dashboard/industry`
+- `/profile`
+- `/my-materials`
+- `/notifications`
+- `/messages`
 
 Marketplace and master data:
 - `/marketplace/waste`
@@ -46,6 +50,8 @@ Marketplace and master data:
 - `/master/waste-categories`
 
 Pickup and collector flow:
+- `/pickup/confirm`
+- `/pickup/tracking`
 - `/pickup/routes`
 - `/pickup/[id]`
 - `/pickup/optimizer`
@@ -90,6 +96,35 @@ Frontend menggunakan Tailwind CSS, shadcn/ui, lucide-react, dan motion untuk kom
 - `src/components/media/video-backdrop.tsx`: backdrop video dekoratif yang aman, termasuk overlay dan fallback saat video atau motion tidak tersedia.
 - `src/components/home/`: hero PACUL dan slot calon mitra ekosistem tanpa klaim sponsor atau logo eksternal.
 
+## Landing Page
+
+Hero utama dipertahankan sebagai pembuka. Konten setelah hero disusun ulang dengan pendekatan mobile-first menjadi:
+
+- `Mengapa PACUL` dengan tiga metrik demo yang diberi penanda jelas.
+- `Etalase Sirkular` untuk membedakan material mentah dan produk daur ulang.
+- `Kolaborasi Ekosistem` dengan kategori calon mitra tanpa klaim kerja sama resmi.
+- Marquee `Supported by` berisi logo SVG generik dengan penanda demo, pause saat hover/focus, dan dukungan reduced motion.
+- Blok ajakan bergabung yang mengarah ke route register dan marketplace yang tersedia.
+
+## Marketplace dan Laporan
+
+- `/marketplace/waste`: pencarian, filter kategori/status, empty state, dan tautan detail listing berbasis mock data.
+- `/marketplace/materials`: pencarian, filter kategori/ketersediaan, traceability, serta entry point order yang mengikuti status stok.
+- `/reports`: filter peran dan periode, metrik aktivitas, tabel laporan, empty state, serta ekspor CSV lokal.
+
+Marketplace dan laporan masih menggunakan data demo. Persistensi listing, sinkronisasi stok, autentikasi user, dan data laporan produksi menunggu integrasi backend.
+
+## User 1: Rumah Tangga (Household)
+Sprint fitur khusus rumah tangga mencakup:
+- **Profil**: Halaman `/profile` dengan identitas, metrik aktivitas, preferensi notifikasi, dan shortcut aksi.
+- **Material Saya**: Halaman `/my-materials` menampilkan daftar listing yang dibuat dengan integrasi status (draft, listed, scheduled).
+- **Konfirmasi Pickup**: Alur domain-specific (bukan e-commerce biasa) di `/pickup/confirm` untuk mengulas rincian material, jadwal, mitra pengangkut, dan estimasi nilai sebelum menyetujui.
+- **Notifikasi**: Halaman pusat notifikasi di `/notifications` (serta ikon badge di navbar desktop/mobile) untuk melacak status pickup, pesan baru, dsb. Mendukung filter "Belum dibaca".
+- **Chat Mitra**: Integrasi chat mock di `/messages` untuk komunikasi langsung dengan mitra pengangkut.
+- **Tracking Pickup**: Halaman visual realtime-ready di `/pickup/tracking` menampilkan placeholder map, timeline status pengambilan, dan ETA.
+
+*Penting:* Seluruh data profil, notifikasi, riwayat chat, dan tracking masih bersifat **mock/demo**. Fungsionalitas *realtime* di UI sudah siap diintegrasikan melalui channel WebSocket/Supabase yang akan datang dari backend.
+
 ## Hero Video Asset
 
 Hero mendukung video lokal opsional pada path berikut:
@@ -115,7 +150,7 @@ Buka `http://localhost:3000`.
 - `npm run typecheck`: menjalankan TypeScript typecheck tanpa emit.
 
 ## Demo Data
-Semua halaman skeleton memakai mock data dari `src/data/mock-pacul.ts`. Data tersebut hanya placeholder untuk membangun UI dan alur, bukan data produksi.
+Semua halaman skeleton memakai mock data dari `src/data/mock-pacul.ts` dan `src/data/mock-household.ts`. Data tersebut hanya placeholder untuk membangun UI dan alur, bukan data produksi.
 
 ## Backend Integration Notes
 Integrasi produksi untuk Supabase, auth, storage, AI classification, realtime negotiation chat, dan export laporan masih pending dan akan dihubungkan dari branch backend.

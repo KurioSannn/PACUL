@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Recycle } from "lucide-react";
+import { Bell, Menu, MessageCircle } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -9,7 +10,6 @@ import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 const navigationItems = [
-  { href: "#alur", label: "Alur" },
   { href: routes.marketplaceWaste, label: "Marketplace" },
   { href: routes.dashboard, label: "Dashboard" },
   { href: routes.impact, label: "Dampak" },
@@ -17,10 +17,16 @@ const navigationItems = [
 ];
 
 export function PublicHeader() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
+      if (pathname !== routes.home) {
+        setScrolled(true);
+        return;
+      }
+
       const heroEl = document.getElementById("utama");
       if (heroEl) {
         const heroBottom = heroEl.getBoundingClientRect().bottom;
@@ -33,7 +39,7 @@ export function PublicHeader() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [pathname]);
 
   return (
     <header
@@ -49,21 +55,18 @@ export function PublicHeader() {
         <Link
           href={routes.home}
           className={cn(
-            "inline-flex items-center gap-2 rounded-xl p-2 font-semibold tracking-tight transition-colors",
+            "inline-flex items-center gap-2 rounded-xl p-1.5 font-semibold tracking-tight transition-colors",
             scrolled ? "hover:bg-[var(--color-mint-100)]" : "hover:bg-white/10"
           )}
         >
-          <span className="grid size-8 place-items-center rounded-[10px] bg-[var(--color-forest-900)] text-white shadow-[0_1px_0_rgba(255,255,255,0.12)]">
-            <Recycle className="size-4" aria-hidden="true" />
-          </span>
-          <span
+          <img
+            src="/BISSMILAH MENANG fix.png"
+            alt="PACUL Logo"
             className={cn(
-              "text-xs tracking-[0.22em] transition-colors duration-300 sm:text-sm",
-              scrolled ? "text-[var(--color-forest-900)]" : "text-white",
+              "h-8 w-auto object-contain transition-all duration-300",
+              scrolled ? "" : "brightness-0 invert"
             )}
-          >
-            PACUL
-          </span>
+          />
         </Link>
 
         {/* Center nav — desktop */}
@@ -75,13 +78,42 @@ export function PublicHeader() {
               className={cn(
                 "rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300",
                 scrolled
-                  ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)] hover:text-[var(--color-leaf-700)]"
-                  : "text-white hover:bg-white/15",
+                  ? "!text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)] hover:text-[var(--color-leaf-700)]"
+                  : "!text-white hover:bg-white/15",
               )}
             >
               {item.label}
             </Link>
           ))}
+        </div>
+
+        {/* Icon actions — desktop */}
+        <div className="hidden items-center gap-1 md:flex">
+          <Link
+            href={routes.messages}
+            className={cn(
+              "relative inline-flex size-9 items-center justify-center rounded-full transition-colors",
+              scrolled
+                ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]"
+                : "text-white hover:bg-white/15",
+            )}
+            aria-label="Buka chat"
+          >
+            <MessageCircle className="size-[18px]" aria-hidden="true" />
+          </Link>
+          <Link
+            href={routes.notifications}
+            className={cn(
+              "relative inline-flex size-9 items-center justify-center rounded-full transition-colors",
+              scrolled
+                ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]"
+                : "text-white hover:bg-white/15",
+            )}
+            aria-label="Buka notifikasi"
+          >
+            <Bell className="size-[18px]" aria-hidden="true" />
+            <span className="absolute right-1 top-1 size-2 rounded-full bg-[var(--color-leaf-600)]" />
+          </Link>
         </div>
 
         {/* Right actions — desktop */}
@@ -91,8 +123,8 @@ export function PublicHeader() {
             className={cn(
               "rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 border",
               scrolled
-                ? "border-[var(--color-line)] text-[var(--color-forest-900)] hover:bg-[var(--color-sage-50)]"
-                : "border-white/30 bg-transparent text-white hover:bg-white/15 hover:border-white/60",
+                ? "border-[var(--color-line)] !text-[var(--color-forest-900)] hover:bg-[var(--color-sage-50)]"
+                : "border-white/30 bg-transparent !text-white hover:bg-white/15 hover:border-white/60",
             )}
           >
             Masuk
@@ -102,8 +134,8 @@ export function PublicHeader() {
             className={cn(
               "rounded-full px-4.5 py-2 text-sm font-semibold transition-all duration-300 shadow-[0_1px_2px_rgba(0,0,0,0.08)]",
               scrolled
-                ? "bg-[var(--color-leaf-600)] text-white hover:bg-[var(--color-leaf-700)]"
-                : "bg-white text-[var(--color-forest-900)] hover:bg-white/90",
+                ? "bg-[var(--color-leaf-600)] !text-white hover:bg-[var(--color-leaf-700)]"
+                : "bg-white !text-[var(--color-forest-900)] hover:bg-white/90",
             )}
           >
             Buat Listing
@@ -111,7 +143,32 @@ export function PublicHeader() {
         </div>
 
         {/* Mobile toggle */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-1.5 md:hidden">
+          <Link
+            href={routes.messages}
+            className={cn(
+              "inline-flex size-9 items-center justify-center rounded-full transition-colors",
+              scrolled
+                ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]"
+                : "text-white hover:bg-white/10",
+            )}
+            aria-label="Buka chat"
+          >
+            <MessageCircle className="size-[18px]" aria-hidden="true" />
+          </Link>
+          <Link
+            href={routes.notifications}
+            className={cn(
+              "relative inline-flex size-9 items-center justify-center rounded-full transition-colors",
+              scrolled
+                ? "text-[var(--color-forest-900)] hover:bg-[var(--color-mint-100)]"
+                : "text-white hover:bg-white/10",
+            )}
+            aria-label="Buka notifikasi"
+          >
+            <Bell className="size-[18px]" aria-hidden="true" />
+            <span className="absolute right-1 top-1 size-2 rounded-full bg-[var(--color-leaf-600)]" />
+          </Link>
           <Link
             href={routes.listingsNew}
             className={cn(

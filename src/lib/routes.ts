@@ -32,4 +32,10 @@ export const routes = {
   impact: "/impact",
   reports: "/reports",
   deployReadiness: "/deploy-readiness",
+  profile: "/profile",
+  myMaterials: "/my-materials",
+  pickupConfirm: "/pickup/confirm",
+  notifications: "/notifications",
+  messages: "/messages",
+  pickupTracking: "/pickup/tracking",
 } as const;

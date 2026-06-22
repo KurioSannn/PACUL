@@ -114,6 +114,34 @@ button, input, select, textarea { font: inherit; }
 .landing-shell { margin: 0 auto; max-width: 1360px; padding-inline: clamp(20px, 4vw, 64px); }
 .landing-section { padding-bottom: 64px; padding-top: 64px; }
 
+.supporter-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent);
+}
+
+.supporter-marquee-track {
+  animation: supporter-marquee-scroll 28s linear infinite;
+  display: flex;
+  width: max-content;
+}
+
+.supporter-marquee:hover .supporter-marquee-track,
+.supporter-marquee:focus-within .supporter-marquee-track {
+  animation-play-state: paused;
+}
+
+.supporter-marquee-group {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 0 12px 0 0;
+}
+
+@keyframes supporter-marquee-scroll {
+  to { transform: translateX(-50%); }
+}
+
 .site-header { background: var(--color-surface); border-bottom: 1px solid var(--color-line); }
 .site-navigation, .preview-topline, .detail-list div { align-items: center; display: flex; justify-content: space-between; }
 .site-navigation { min-height: 68px; }
@@ -362,6 +390,10 @@ button, input, select, textarea { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .video-backdrop video {
     display: none;
+  }
+
+  .supporter-marquee-track {
+    animation: none;
   }
 }
 
