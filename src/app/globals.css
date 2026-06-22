@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   --color-forest-950: #071f18;
   --color-forest-900: #0b2f24;
@@ -23,6 +25,33 @@
   --radius-button: 12px;
   --radius-card: 18px;
   --shadow-panel: 0 10px 30px rgb(7 31 24 / 8%);
+}
+
+@theme {
+  --color-pacul-forest-950: var(--color-forest-950);
+  --color-pacul-forest-900: var(--color-forest-900);
+  --color-pacul-forest-800: var(--color-forest-800);
+  --color-pacul-leaf-700: var(--color-leaf-700);
+  --color-pacul-leaf-600: var(--color-leaf-600);
+  --color-pacul-leaf-500: var(--color-leaf-500);
+  --color-pacul-mint-200: var(--color-mint-200);
+  --color-pacul-mint-100: var(--color-mint-100);
+  --color-pacul-sage-50: var(--color-sage-50);
+  --color-pacul-earth-700: var(--color-earth-700);
+  --color-pacul-amber-100: var(--color-amber-100);
+  --color-pacul-amber-600: var(--color-amber-600);
+  --color-pacul-red-100: var(--color-red-100);
+  --color-pacul-red-700: var(--color-red-700);
+  --color-pacul-blue-100: var(--color-blue-100);
+  --color-pacul-blue-700: var(--color-blue-700);
+  --color-pacul-ink-900: var(--color-ink-900);
+  --color-pacul-ink-700: var(--color-ink-700);
+  --color-pacul-ink-500: var(--color-ink-500);
+  --color-pacul-line: var(--color-line);
+  --color-pacul-surface: var(--color-surface);
+  --radius-pacul-button: var(--radius-button);
+  --radius-pacul-card: var(--radius-card);
+  --shadow-pacul-panel: var(--shadow-panel);
 }
 
 * { box-sizing: border-box; }
@@ -78,3 +107,209 @@ button, input, select, textarea { font: inherit; }
 .flow-grid, .foundation-grid, .state-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }.flow-grid p, .foundation-grid p { color: var(--color-ink-700); font-size: 0.92rem; margin: 0; }.foundation-section { background: var(--color-mint-100); padding: 72px 0; }.foundation-grid { grid-template-columns: repeat(2, 1fr); }
 .state-card { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 20px; }.state-card h2 { color: var(--color-forest-900); font-size: 1.05rem; margin: 10px 0 6px; }.state-card p { color: var(--color-ink-700); font-size: 0.9rem; margin: 0 0 14px; }.state-symbol { align-items: center; background: var(--color-mint-100); border-radius: 8px; color: var(--color-leaf-700); display: flex; font-weight: 800; height: 28px; justify-content: center; width: 28px; }.state-error .state-symbol { background: var(--color-red-100); color: var(--color-red-700); }.loading-mark { animation: spin 1s linear infinite; border: 3px solid var(--color-mint-200); border-radius: 50%; border-right-color: var(--color-leaf-600); display: block; height: 25px; margin-bottom: 12px; width: 25px; }@keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 760px) { .hero-grid, .flow-grid, .foundation-grid, .state-grid { grid-template-columns: 1fr; }.hero-grid { padding-bottom: 54px; padding-top: 54px; }.site-navigation nav { display: none; }.section { padding-bottom: 54px; padding-top: 54px; } }
+
+.dashboard-shell {
+  background: var(--color-sage-50);
+}
+
+.nav-panel,
+.shell-hero,
+.shell-section,
+.summary-card,
+.preview-card,
+.table-card,
+.integration-card,
+.auth-card,
+.route-card,
+.timeline-card,
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-panel);
+}
+
+.dashboard-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.sidebar {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  padding: 20px;
+}
+
+.nav-links {
+  display: grid;
+  gap: 10px;
+}
+
+.route-link {
+  display: block;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 12px;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.route-link[data-active="true"] {
+  background: var(--color-mint-100);
+  border-color: var(--color-mint-200);
+}
+
+.route-link:hover {
+  border-color: var(--color-line);
+  background: var(--color-sage-50);
+}
+
+.shell-content {
+  display: grid;
+  gap: 20px;
+}
+
+.shell-hero,
+.shell-section,
+.summary-card,
+.preview-card,
+.table-card,
+.integration-card,
+.auth-card,
+.route-card,
+.timeline-card,
+.panel {
+  padding: 20px;
+}
+
+.shell-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+}
+
+.shell-lead,
+.page-lead,
+.panel-copy,
+.integration-copy,
+.metric-copy,
+.table-note,
+.meta-copy,
+.auth-note,
+.info-copy {
+  margin: 0;
+  color: var(--color-ink-700);
+}
+
+.toolbar-row,
+.dashboard-meta,
+.shell-topline,
+.preview-topline,
+.status-row,
+.route-preview-row,
+.metric-row,
+.integration-row,
+.placeholder-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stack-grid,
+.list-grid,
+.feature-grid,
+.role-grid,
+.state-grid,
+.summary-grid,
+.route-grid,
+.report-grid,
+.review-grid,
+.auth-grid,
+.timeline-grid,
+.dashboard-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.list-grid,
+.feature-grid,
+.role-grid,
+.state-grid,
+.timeline-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.summary-grid,
+.route-grid,
+.report-grid,
+.review-grid,
+.auth-grid,
+.dashboard-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metric-card h2,
+.panel dd,
+.summary-card h3,
+.route-card h3,
+.auth-card h3,
+.timeline-card h3,
+.integration-card h3 {
+  margin: 0;
+  color: var(--color-forest-900);
+}
+
+.placeholder-symbol,
+.metric-symbol {
+  align-items: center;
+  justify-content: center;
+  display: inline-flex;
+  height: 28px;
+  width: 28px;
+  border-radius: 8px;
+  background: var(--color-mint-100);
+  color: var(--color-leaf-700);
+}
+
+.tone-empty .placeholder-symbol,
+.tone-disabled .placeholder-symbol {
+  background: #edf0ee;
+  color: var(--color-ink-700);
+}
+
+.tone-error .placeholder-symbol {
+  background: var(--color-red-100);
+  color: var(--color-red-700);
+}
+
+.tone-success .placeholder-symbol {
+  background: var(--color-mint-100);
+  color: var(--color-leaf-700);
+}
+
+.integration-card {
+  border-style: dashed;
+}
+
+@media (max-width: 960px) {
+  .dashboard-layout,
+  .list-grid,
+  .feature-grid,
+  .role-grid,
+  .state-grid,
+  .summary-grid,
+  .route-grid,
+  .report-grid,
+  .review-grid,
+  .auth-grid,
+  .timeline-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+}
