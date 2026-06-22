@@ -634,6 +634,26 @@ Runs AI inference on a previously uploaded waste image, persists the result, and
 - `503 AI_UNAVAILABLE` — classifier not ready or inference failed
 - `429` — rate limit exceeded
 
+### `GET /ai/model-version` (public)
+
+Returns the currently active AI model version from the `ai_model_versions` registry. No authentication required (public reference for clients).
+
+**Response**
+
+```json
+{
+  "success": true,
+  "data": {
+    "version": "mock-1.0.0",
+    "model_type": "mock",
+    "taxonomy_version": "1.0",
+    "deployed_at": "2026-06-01T00:00:00.000Z"
+  }
+}
+```
+
+`data` is `null` when no active model version has been seeded. Every inference request (success or error) is recorded in `inference_logs`, linked to the active model version and, when available, the resulting classification.
+
 ### `GET /ai/classifications/:id` (authenticated)
 
 Returns a persisted classification result. Only the owning user can access it.

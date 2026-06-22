@@ -81,6 +81,14 @@ paths:
           description: ""
       tags: &a3
         - Ai
+  /ai/model-version:
+    get:
+      operationId: AiController_getModelVersion
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a3
   /ai/classifications/{id}:
     get:
       operationId: AiController_getClassification

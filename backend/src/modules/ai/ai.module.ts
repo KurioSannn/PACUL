@@ -20,6 +20,8 @@ import { MockClassifier } from './mock-classifier';
 
 import { ModelClassifier } from './model-classifier';
 
+import { ModelVersionService } from './model-version.service';
+
 import type { WasteClassifier } from './classifier.interface';
 
 @Module({
@@ -35,6 +37,8 @@ import type { WasteClassifier } from './classifier.interface';
     InferenceLogger,
 
     ModelClassifier,
+
+    ModelVersionService,
 
     {
       provide: WASTE_CLASSIFIER,
@@ -73,6 +77,8 @@ import type { WasteClassifier } from './classifier.interface';
     CategoryMapperService,
 
     InferenceLogger,
+
+    ModelVersionService,
 
     ClassificationService,
   ],

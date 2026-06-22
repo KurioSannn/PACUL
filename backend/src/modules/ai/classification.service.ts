@@ -89,18 +89,17 @@ export class ClassificationService {
         mimeType,
       );
     } catch (error) {
-      this.inferenceLogger.logError(error, { userId, imagePath });
+      this.inferenceLogger.logError(error, {
+        userId,
+        imagePath,
+        mimeType,
+        inputSizeBytes: imageBuffer.length,
+      });
       throw new ServiceUnavailableException({
         error: 'AI classification is temporarily unavailable',
         code: 'AI_UNAVAILABLE',
       });
     }
-
-    this.inferenceLogger.logInference(classificationResult, {
-      userId,
-      imagePath,
-      mimeType,
-    });
 
     const category = await this.categoryMapper.mapAIClassToDBCategory(
       classificationResult.top_class,
@@ -143,6 +142,14 @@ export class ClassificationService {
     }
 
     const mappedRow = this.mapRow(data);
+
+    this.inferenceLogger.logInference(classificationResult, {
+      userId,
+      imagePath,
+      mimeType,
+      classificationId: mappedRow.id,
+      inputSizeBytes: imageBuffer.length,
+    });
 
     this.traceabilityService.emitEvent({
       eventType: 'ai_classified',
