@@ -1,100 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ListingCard, type UnifiedListing } from "./ListingCard";
+import { useEffect, useMemo, useState } from "react";
 import { PackageSearch } from "lucide-react";
 
-const demoListings: UnifiedListing[] = [
-  {
-    id: "ul-1",
-    type: "raw",
-    title: "Botol PET bening 8 kg",
-    category: "plastic",
-    weightKg: 8,
-    location: "Rungkut, Surabaya",
-    actorName: "Keluarga Ardi",
-    isAiPredicted: true,
-  },
-  {
-    id: "ul-2",
-    type: "processed",
-    title: "PET Flake Grade A",
-    category: "plastic",
-    weightKg: 45,
-    pricePerKg: 6500,
-    location: "Sidoarjo",
-    actorName: "UD Maju Hijau",
-  },
-  {
-    id: "ul-3",
-    type: "raw",
-    title: "Kardus kering 12 kg",
-    category: "paper",
-    weightKg: 12,
-    location: "Wonokromo, Surabaya",
-    actorName: "Keluarga Sari",
-    isAiPredicted: true,
-  },
-  {
-    id: "ul-4",
-    type: "finished",
-    title: "Biji plastik HDPE hitam",
-    category: "plastic",
-    weightKg: 200,
-    pricePerKg: 12000,
-    location: "Gresik",
-    actorName: "PT Plastik Nusantara",
-  },
-  {
-    id: "ul-5",
-    type: "processed",
-    title: "Aluminium press 30 kg",
-    category: "metal",
-    weightKg: 30,
-    pricePerKg: 18000,
-    location: "Gresik",
-    actorName: "CV Logam Bersih",
-  },
-  {
-    id: "ul-6",
-    type: "raw",
-    title: "Kaleng aluminium campuran",
-    category: "metal",
-    weightKg: 3,
-    location: "Gubeng, Surabaya",
-    actorName: "Keluarga Roni",
-  },
-  {
-    id: "ul-7",
-    type: "processed",
-    title: "Kardus press bale 100 kg",
-    category: "paper",
-    weightKg: 100,
-    pricePerKg: 2800,
-    location: "Sidoarjo",
-    actorName: "UD Maju Hijau",
-  },
-  {
-    id: "ul-8",
-    type: "raw",
-    title: "Botol kaca bekas minuman",
-    category: "glass",
-    weightKg: 5,
-    location: "Sukolilo, Surabaya",
-    actorName: "Keluarga Dita",
-    isAiPredicted: true,
-  },
-  {
-    id: "ul-9",
-    type: "finished",
-    title: "Kertas daur ulang roll",
-    category: "paper",
-    weightKg: 500,
-    pricePerKg: 4200,
-    location: "Pasuruan",
-    actorName: "PT Kertas Jaya Abadi",
-  },
-];
+import { ListingCard } from "./ListingCard";
+import { UNIFIED_MARKETPLACE_LISTINGS } from "@/data/unified-marketplace-listings";
+import { routes } from "@/lib/routes";
+import type { WasteCategory } from "@/types/pacul";
+
+type ListingFeedProps = {
+  query: string;
+  category: "all" | WasteCategory;
+  layer: "all" | "raw" | "processed" | "finished";
+  filteredCount: number;
+};
 
 function ListingSkeleton() {
   return (
@@ -126,13 +45,23 @@ function ListingSkeleton() {
   );
 }
 
-export function ListingFeed() {
+export function ListingFeed({ query, category, layer, filteredCount }: ListingFeedProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
+    const timer = setTimeout(() => setIsLoading(false), 600);
     return () => clearTimeout(timer);
   }, []);
+
+  const listings = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return UNIFIED_MARKETPLACE_LISTINGS.filter((item) => {
+      if (layer !== "all" && item.type !== layer) return false;
+      if (category !== "all" && item.category !== category) return false;
+      if (!q) return true;
+      return `${item.title} ${item.location} ${item.actorName}`.toLowerCase().includes(q);
+    });
+  }, [query, category, layer]);
 
   return (
     <section aria-labelledby="feed-title">
@@ -145,36 +74,40 @@ export function ListingFeed() {
             id="feed-title"
             className="text-2xl font-semibold tracking-tight text-[var(--color-forest-900)]"
           >
-            {isLoading ? "Memuat listing..." : `${demoListings.length} listing tersedia`}
+            {isLoading ? "Memuat listing..." : `${filteredCount} listing tersedia`}
           </h2>
         </div>
         <p className="inline-flex rounded-full border border-[var(--color-line)] bg-[var(--color-sage-50)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-500)]">
-          Data demo MVP
+          Katalog demo Surabaya · {UNIFIED_MARKETPLACE_LISTINGS.length} item
         </p>
       </div>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => <ListingSkeleton key={i} />)
-        ) : demoListings.length === 0 ? (
+        ) : listings.length === 0 ? (
           <div className="col-span-full rounded-2xl border border-dashed border-[var(--color-mint-200)] bg-white p-10 text-center">
-            <PackageSearch
-              className="mx-auto size-8 text-[var(--color-leaf-700)]"
-              aria-hidden="true"
-            />
+            <PackageSearch className="mx-auto size-8 text-[var(--color-leaf-700)]" aria-hidden="true" />
             <h3 className="mt-4 text-lg font-semibold text-[var(--color-forest-900)]">
               Belum ada listing yang cocok
             </h3>
             <p className="mt-2 text-sm text-[var(--color-ink-700)]">
-              Ubah kata kunci atau reset filter untuk melihat data demo lainnya.
+              Ubah kata kunci atau reset filter untuk melihat katalog demo lainnya.
             </p>
           </div>
         ) : (
-          demoListings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))
+          listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)
         )}
       </div>
+
+      {!isLoading && listings.length > 0 ? (
+        <p className="mt-6 text-center text-sm text-[var(--color-ink-500)]">
+          <a href={routes.authLogin} className="font-semibold text-[var(--color-leaf-700)] hover:underline">
+            Masuk
+          </a>{" "}
+          untuk klaim pickup, beli bahan baku, atau checkout.
+        </p>
+      ) : null}
     </section>
   );
 }

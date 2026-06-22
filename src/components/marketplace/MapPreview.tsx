@@ -1,22 +1,29 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 
-const markers = [
-  { lat: -7.3241, lng: 112.7378, label: "Botol PET bening · Rungkut" },
-  { lat: -7.2973, lng: 112.7386, label: "Kardus kering · Wonokromo" },
-  { lat: -7.2788, lng: 112.7511, label: "Kaleng aluminium · Gubeng" },
-  { lat: -7.2943, lng: 112.7859, label: "Botol kaca · Sukolilo" },
-  { lat: -7.4533, lng: 112.7183, label: "PET Flake Grade A · Sidoarjo" },
-  { lat: -7.1618, lng: 112.6533, label: "Aluminium press · Gresik" },
-];
+import { DEMO_WASTE_MARKETPLACE } from "@/data/demo-marketplace";
 
 export function MapPreview() {
   const mapRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+
+  const markers = useMemo(
+    () =>
+      DEMO_WASTE_MARKETPLACE.filter(
+        (item) => typeof item.latitude === "number" && typeof item.longitude === "number",
+      )
+        .slice(0, 8)
+        .map((item) => ({
+          lat: item.latitude as number,
+          lng: item.longitude as number,
+          label: `${item.title} · ${item.district ?? item.city ?? "Surabaya"}`,
+        })),
+    [],
+  );
 
   useEffect(() => {
     if (!mapRef.current || loaded) return;
@@ -66,7 +73,7 @@ export function MapPreview() {
     return () => {
       cancelled = true;
     };
-  }, [loaded]);
+  }, [loaded, markers]);
 
   if (hasError) {
     return (
@@ -90,7 +97,7 @@ export function MapPreview() {
           </h2>
         </div>
         <span className="hidden rounded-full border border-[var(--color-line)] bg-[var(--color-sage-50)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-500)] sm:inline-flex">
-          Preview · klik untuk expand
+          Preview · katalog demo Surabaya
         </span>
       </div>
       <div className="overflow-hidden rounded-2xl border border-[var(--color-line)]">

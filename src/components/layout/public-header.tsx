@@ -231,8 +231,9 @@ export function PublicHeader() {
                   const isAnchor = "id" in item;
                   const isActive = isAnchor ? activeSection === item.id : (pathname === item.href && item.href !== "/");
                   return (
-                    <SheetClose 
+                    <SheetClose
                       key={item.href}
+                      nativeButton={false}
                       render={
                         <Link
                           href={item.href}
@@ -260,7 +261,8 @@ export function PublicHeader() {
                   </button>
                 ) : (
                   <>
-                    <SheetClose 
+                    <SheetClose
+                      nativeButton={false}
                       render={
                         <Link
                           href={routes.authLogin}
@@ -270,7 +272,8 @@ export function PublicHeader() {
                     >
                       Masuk
                     </SheetClose>
-                    <SheetClose 
+                    <SheetClose
+                      nativeButton={false}
                       render={
                         <Link
                           href={routes.authRegister}
