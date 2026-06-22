@@ -90,8 +90,30 @@ function HouseholdDashboard({ summary }: { summary: HouseholdSummary }) {
 }
 
 function CollectorDashboard({ summary }: { summary: CollectorSummary }) {
+  const { accessToken } = useAuth();
+  const catQuery = useAsyncData(
+    async () => {
+      if (!accessToken) return [];
+      const { getHandledCategories } = await import("@/lib/api");
+      return getHandledCategories(accessToken);
+    },
+    [accessToken],
+    Boolean(accessToken),
+  );
+
   return (
     <>
+      {catQuery.data && catQuery.data.length === 0 ? (
+        <div className="mb-6 rounded-2xl border-2 border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm">
+          <h2 className="text-lg font-bold">⚠️ Perhatian: Kategori Ditangani Belum Diatur!</h2>
+          <p className="mt-1 text-sm text-amber-800">
+            Anda tidak akan bisa melihat atau mengklaim sampah dari Rumah Tangga sampai Anda mengatur kategori sampah apa saja yang Anda terima.
+          </p>
+          <Link href={routes.collectorHandledCategories} className="mt-4 inline-flex rounded-full bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700">
+            Atur Kategori Sekarang
+          </Link>
+        </div>
+      ) : null}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Klaim aktif" value={summary.counts.active_claims} icon={<Truck className="size-5" />} />
         <MetricCard label="Rute direncanakan" value={summary.counts.planned_routes} />
