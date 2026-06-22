@@ -35,6 +35,18 @@ interface WasteCategoryRow {
   sort_order: number;
 }
 
+interface ClassificationOverrideRow {
+  id: string;
+  classification_id: string;
+  user_id: string;
+  original_category_id: string | null;
+  original_class: string | null;
+  original_confidence: number | string | null;
+  override_category_id: string;
+  override_reason: string | null;
+  created_at: string;
+}
+
 interface AiClassificationRow {
   id: string;
   user_id: string;
@@ -323,7 +335,9 @@ export class ClassificationService {
       });
     }
 
-    return (data ?? []).map((entry) => ({
+    const rows = (data ?? []) as ClassificationOverrideRow[];
+
+    return rows.map((entry) => ({
       id: entry.id,
       classification_id: entry.classification_id,
       user_id: entry.user_id,
