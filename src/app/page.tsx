@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { EcosystemPartners } from "@/components/home/ecosystem-partners";
+import { PaculHero } from "@/components/home/pacul-hero";
+import { PublicHeader } from "@/components/layout/public-header";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -15,49 +17,9 @@ export default function HomePage() {
 
   return (
     <main>
-      <header className="site-header">
-        <div className="page-shell site-navigation">
-          <a className="brand" href="#utama" aria-label="Pacul beranda">
-            <span aria-hidden="true">P</span>
-            Pacul
-          </a>
-          <nav aria-label="Navigasi utama">
-            <a href="#alur">Alur</a>
-            <a href="#foundation">Foundation</a>
-          </nav>
-        </div>
-      </header>
-
-      <section className="hero" id="utama">
-        <div className="page-shell hero-grid">
-          <div>
-            <p className="eyebrow eyebrow-light">Frontend foundation</p>
-            <h1>Alur material daur ulang yang lebih jelas untuk setiap peran.</h1>
-            <p>
-              Pacul menghubungkan rumah tangga, pengepul, dan industri pengolah dalam satu alur
-              daur ulang yang lebih jelas.
-            </p>
-            <div className="button-row">
-              <Button>Preview fondasi</Button>
-              <Button variant="secondary">Lihat komponen</Button>
-            </div>
-          </div>
-
-          <Card className="hero-preview">
-            <div className="preview-topline">
-              <Badge tone="green">Data demo</Badge>
-              <StatusPill label="Tersedia" />
-            </div>
-            <p className="eyebrow">Listing awal</p>
-            <h2>{listing.title}</h2>
-            <dl className="detail-list">
-              <div><dt>Berat</dt><dd>{formatWeight(listing.weightKg)}</dd></div>
-              <div><dt>Area</dt><dd>{listing.district}, Surabaya</dd></div>
-              <div><dt>Kategori</dt><dd>{wasteCategoryLabels[listing.category]}</dd></div>
-            </dl>
-          </Card>
-        </div>
-      </section>
+      <PublicHeader />
+      <PaculHero />
+      <EcosystemPartners />
 
       <section className="page-shell section" id="alur" aria-labelledby="flow-title">
         <p className="eyebrow">Tiga peran, satu alur material</p>
