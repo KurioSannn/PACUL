@@ -1,0 +1,1 @@
+export const WASTE_CLASSIFIER = 'WASTE_CLASSIFIER';
