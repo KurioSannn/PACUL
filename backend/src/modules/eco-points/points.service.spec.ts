@@ -45,7 +45,11 @@ function createSupabaseMock(opts: MockOptions = {}) {
 }
 
 function createTraceabilityMock() {
-  return { emitEvent: jest.fn() } as unknown as TraceabilityService;
+  const emitEvent = jest.fn();
+  return {
+    traceability: { emitEvent } as unknown as TraceabilityService,
+    emitEvent,
+  };
 }
 
 describe('PointsService', () => {
@@ -62,7 +66,7 @@ describe('PointsService', () => {
     const { supabaseService, inserts } = createSupabaseMock({
       existingCount: 5,
     });
-    const traceability = createTraceabilityMock();
+    const { traceability, emitEvent } = createTraceabilityMock();
     const service = new PointsService(supabaseService, traceability);
 
     await service.awardPoints({
@@ -79,7 +83,7 @@ describe('PointsService', () => {
       points: POINT_VALUES.listing_published,
       event_type: 'listing_published',
     });
-    expect(traceability.emitEvent).toHaveBeenCalledWith(
+    expect(emitEvent).toHaveBeenCalledWith(
       expect.objectContaining({ eventType: 'eco_points_awarded' }),
     );
   });
@@ -90,7 +94,7 @@ describe('PointsService', () => {
     });
     const service = new PointsService(
       supabaseService,
-      createTraceabilityMock(),
+      createTraceabilityMock().traceability,
     );
 
     await service.awardPoints({
@@ -113,7 +117,7 @@ describe('PointsService', () => {
     });
     const service = new PointsService(
       supabaseService,
-      createTraceabilityMock(),
+      createTraceabilityMock().traceability,
     );
 
     await service.awardPoints({
@@ -135,7 +139,7 @@ describe('PointsService', () => {
       existingCount: 1,
       insertError: 'db down',
     });
-    const traceability = createTraceabilityMock();
+    const { traceability, emitEvent } = createTraceabilityMock();
     const service = new PointsService(supabaseService, traceability);
 
     await expect(
@@ -146,7 +150,7 @@ describe('PointsService', () => {
         entityId,
       }),
     ).resolves.toBeUndefined();
-    expect(traceability.emitEvent).not.toHaveBeenCalled();
+    expect(emitEvent).not.toHaveBeenCalled();
   });
 
   it('sums ledger points in getUserPoints', async () => {
@@ -155,7 +159,7 @@ describe('PointsService', () => {
     });
     const service = new PointsService(
       supabaseService,
-      createTraceabilityMock(),
+      createTraceabilityMock().traceability,
     );
 
     const result = await service.getUserPoints(userId);
@@ -201,7 +205,7 @@ describe('PointsService', () => {
     });
     const service = new PointsService(
       supabaseService,
-      createTraceabilityMock(),
+      createTraceabilityMock().traceability,
     );
 
     const summary = await service.getPointsSummary(userId);
