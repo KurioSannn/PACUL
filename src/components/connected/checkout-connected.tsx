@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { createOrder, simulateOrderTransaction, startOrderNegotiation } from "@/lib/api";
+import { isDemoBatchId } from "@/lib/demo-workflow-store";
 import { formatCurrency } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
@@ -31,6 +32,14 @@ function CheckoutContent() {
 
     try {
       for (const item of items) {
+        if (isDemoBatchId(item.batchId)) {
+          results.push({
+            orderId: `demo-order-${item.batchId}`,
+            negotiationId: mode === "negotiate" ? `demo-nego-${item.batchId}` : undefined,
+          });
+          continue;
+        }
+
         const order = await createOrder(accessToken, {
           batchId: item.batchId,
           requested_weight_kg: item.requestedWeightKg,
@@ -60,10 +69,17 @@ function CheckoutContent() {
       clearCart();
       setResultLinks(results);
       setStep("done");
-      pushToast(mode === "negotiate" ? "Pesanan dibuat. Lanjut chat & negosiasi harga." : "Pesanan & simulasi pembayaran diproses.", "success");
+      pushToast(
+        mode === "negotiate"
+          ? items.every((i) => isDemoBatchId(i.batchId))
+            ? "Pesanan demo dibuat. Simulasi negosiasi — gunakan listing API nyata untuk thread backend."
+            : "Pesanan dibuat. Lanjut chat & negosiasi harga."
+          : "Pesanan & simulasi pembayaran diproses.",
+        "success",
+      );
 
       const firstNego = results.find((r) => r.negotiationId);
-      if (mode === "negotiate" && firstNego?.negotiationId) {
+      if (mode === "negotiate" && firstNego?.negotiationId && !firstNego.negotiationId.startsWith("demo-")) {
         router.push(routes.negotiationDetail(firstNego.negotiationId));
       }
     } catch (err) {

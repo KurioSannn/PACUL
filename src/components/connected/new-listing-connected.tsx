@@ -19,6 +19,7 @@ import {
   listWasteCategories,
   publishWasteListing,
 } from "@/lib/api";
+import { registerUserListingFromApi } from "@/lib/demo-workflow-actions";
 import type { WasteCategory } from "@/lib/api/types";
 import { routes } from "@/lib/routes";
 
@@ -113,8 +114,10 @@ function NewListingContent() {
       });
       if (publish) {
         await publishWasteListing(accessToken, listing.id);
-        pushToast("Listing berhasil dipublikasikan.", "success");
+        registerUserListingFromApi(listing);
+        pushToast("Listing berhasil dipublikasikan. Pengepul dapat melihatnya di Klaim Sampah RT.", "success");
       } else {
+        registerUserListingFromApi(listing);
         pushToast("Listing disimpan sebagai draft.", "success");
       }
       router.push(routes.listingDetail(listing.id));

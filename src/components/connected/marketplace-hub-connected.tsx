@@ -12,12 +12,9 @@ import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 
 import { useAsyncData } from "@/hooks/use-async-data";
-import {
-  createPickupClaim,
-  getCollectorAvailableWaste,
-  listMaterials,
-  listTransactions,
-} from "@/lib/api";
+import { useDemoWorkflow } from "@/hooks/use-demo-workflow";
+import { claimWasteListing, mergeCollectorWasteCatalog, mergeMaterialsWithDemo, mergePublicWasteCatalog } from "@/lib/demo-workflow-actions";
+import { getCollectorAvailableWaste, listMaterials, listTransactions } from "@/lib/api";
 import { wasteListingStatusLabels, materialBatchStatusLabels } from "@/lib/labels";
 import { formatCurrency } from "@/lib/format";
 import { routes } from "@/lib/routes";
@@ -39,6 +36,8 @@ function MarketplaceHubContent() {
   const { pushToast } = useToast();
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
+  const { claimedListingIds, refresh: refreshDemoWorkflow } = useDemoWorkflow();
+
   const feedQuery = useAsyncData(async () => {
     if (!accessToken) return null;
 
@@ -48,21 +47,34 @@ function MarketplaceHubContent() {
       getCollectorAvailableWaste(accessToken, { limit: 20 }).catch(() => ({ items: [] })),
     ]);
 
+    const wasteItems =
+      profile?.role === "collector"
+        ? mergeCollectorWasteCatalog(wasteRes.items)
+        : mergePublicWasteCatalog(wasteRes.items);
+
     return {
-      waste: wasteRes.items,
-      materials: materialsRes.items,
+      waste: wasteItems,
+      materials: mergeMaterialsWithDemo(materialsRes.items),
       finished: [] as any[],
       transactions: txRes,
     };
-  }, [accessToken], Boolean(accessToken));
+  }, [accessToken, profile?.role, claimedListingIds.length], Boolean(accessToken));
 
-  const claimWaste = async (listingId: string) => {
+  const claimWaste = async (listingId: string, listing: (typeof wasteItems)[number]) => {
     if (!accessToken) return;
     setClaimingId(listingId);
     try {
-      await createPickupClaim(accessToken, listingId);
-      pushToast("Pickup diklaim. Lanjut ke rute pengambilan.", "success");
-      await feedQuery.reload();
+      const result = await claimWasteListing(accessToken, listingId, listing);
+      if (result.mode === "demo") {
+        pushToast(
+          `"${result.listingTitle ?? "Listing"}" diklaim. Buka Peta & Rute Pengambilan untuk optimasi rute.`,
+          "success",
+        );
+        refreshDemoWorkflow();
+      } else {
+        pushToast("Pickup diklaim. Lanjut ke rute pengambilan.", "success");
+        await feedQuery.reload();
+      }
     } catch (err) {
       pushToast(err instanceof Error ? err.message : "Gagal klaim.", "error");
     } finally {
@@ -76,7 +88,9 @@ function MarketplaceHubContent() {
   };
 
   const role = profile?.role;
-  const wasteItems = feedQuery.data?.waste ?? [];
+  const wasteItems = (feedQuery.data?.waste ?? []).filter(
+    (item) => !(role === "collector" && claimedListingIds.includes(item.id)),
+  );
   const materialItems = feedQuery.data?.materials ?? [];
   const finishedItems = feedQuery.data?.finished ?? [];
 
@@ -134,7 +148,7 @@ function MarketplaceHubContent() {
                   role === "collector"
                     ? {
                         label: claimingId === item.id ? "Mengklaim..." : "Klaim pickup",
-                        onClick: () => void claimWaste(item.id),
+                        onClick: () => void claimWaste(item.id, item),
                       }
                     : role === "household"
                       ? { label: "Kelola", href: routes.listingDetail(item.id) }

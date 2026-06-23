@@ -12,6 +12,9 @@ import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useAsyncData } from "@/hooks/use-async-data";
+import { useDemoWorkflow } from "@/hooks/use-demo-workflow";
+import { deletePublishedBatch, mergeMaterialsWithDemo } from "@/lib/demo-workflow-actions";
+import { isDemoBatchId } from "@/lib/demo-workflow-store";
 import { listMaterials } from "@/lib/api";
 import { materialBatchStatusLabels } from "@/lib/labels";
 import { routes } from "@/lib/routes";
@@ -23,14 +26,15 @@ function MaterialsMarketplaceContent() {
   const { pushToast } = useToast();
   const [query, setQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("");
+  const { publishedBatches, refresh: refreshWorkflow } = useDemoWorkflow();
 
   const dataQuery = useAsyncData(async () => {
     if (!accessToken) return { items: [] };
     const res = await listMaterials(accessToken, { limit: 50, city: cityFilter || undefined }).catch(() => ({
       items: [],
     }));
-    return res;
-  }, [accessToken, cityFilter], Boolean(accessToken));
+    return { items: mergeMaterialsWithDemo(res.items) };
+  }, [accessToken, cityFilter, publishedBatches.length], Boolean(accessToken));
 
   const items = useMemo(() => {
     const raw = dataQuery.data?.items ?? [];
@@ -42,6 +46,13 @@ function MaterialsMarketplaceContent() {
   }, [dataQuery.data, query]);
 
   const isIndustry = profile?.role === "industry";
+  const isCollector = profile?.role === "collector";
+
+  const removeOwnBatch = (batchId: string) => {
+    deletePublishedBatch(batchId);
+    refreshWorkflow();
+    pushToast("Batch dihapus dari etalase.", "success");
+  };
 
   return (
     <main className="page-shell grow space-y-6 py-8 pb-24">
@@ -100,6 +111,11 @@ function MaterialsMarketplaceContent() {
                 : undefined
             }
             secondaryAction={{ label: "Detail & jejak", href: routes.materialDetail(item.id) }}
+            primaryAction={
+              isCollector && isDemoBatchId(item.id)
+                ? { label: "Hapus batch", onClick: () => removeOwnBatch(item.id) }
+                : undefined
+            }
           />
         ))}
       </div>

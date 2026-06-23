@@ -201,11 +201,12 @@ export function updatePickupClaimStatus(
   token: Token,
   id: string,
   status: string,
+  options?: { cancel_reason?: string; pickup_scheduled_at?: string; notes?: string },
 ) {
   return apiRequest<PickupClaim>(`/collector/pickup-claims/${id}/status`, {
     method: "PATCH",
     token,
-    body: { status },
+    body: { status, ...options },
   });
 }
 

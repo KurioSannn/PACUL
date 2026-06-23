@@ -271,30 +271,36 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export function mergePickupMapData(apiData: PickupMapApiResponse | null): MergedPickupMapData {
-  if (apiData) {
-    const collector_base = normalizeBase(apiData.collector_base);
+export function mergePickupMapData(
+  apiData: PickupMapApiResponse | null,
+  storedClaimListings: PickupMapListingView[] = [],
+): MergedPickupMapData {
+  const collector_base = apiData ? normalizeBase(apiData.collector_base) : DEMO_COLLECTOR_BASE;
 
-    if (Array.isArray(apiData.points) && apiData.points.length > 0) {
-      return {
-        collector_base,
-        listings: apiData.points.map(fromApiPoint),
-        isDemoFallback: false,
-      };
-    }
+  const apiListings: PickupMapListingView[] = [];
+  if (apiData?.points?.length) {
+    apiListings.push(...apiData.points.map(fromApiPoint));
+  } else if (apiData?.listings?.length) {
+    apiListings.push(...apiData.listings.map(fromAvailableListing));
+  }
 
-    if (Array.isArray(apiData.listings) && apiData.listings.length > 0) {
-      return {
-        collector_base,
-        listings: apiData.listings.map(fromAvailableListing),
-        isDemoFallback: false,
-      };
-    }
+  const mergedById = new Map<string, PickupMapListingView>();
+  for (const item of [...apiListings, ...storedClaimListings]) {
+    mergedById.set(item.id, item);
+  }
+  const listings = Array.from(mergedById.values());
+
+  if (listings.length > 0) {
+    return {
+      collector_base,
+      listings,
+      isDemoFallback: apiListings.length === 0 && storedClaimListings.length > 0,
+    };
   }
 
   return {
     collector_base: DEMO_COLLECTOR_BASE,
-    listings: demoListingsView(),
+    listings: [],
     isDemoFallback: true,
   };
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Route } from "lucide-react";
-import { useMemo, useState } from "react";
+import { MapPin, Route, Trash2 } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
 
 import { RequireAuth } from "@/components/auth/require-auth";
 import { PickupLeafletMap } from "@/components/map/pickup-leaflet-map";
@@ -11,7 +11,11 @@ import { StatusBadge, statusToneForWaste } from "@/components/ui/status-badge";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/contexts/toast-context";
 import { buildDemoRoutePreview, mergePickupMapData } from "@/data/demo-pickup-map";
+import { useDemoWorkflow } from "@/hooks/use-demo-workflow";
 import { useAsyncData } from "@/hooks/use-async-data";
+import { createDemoBatchFromClaims, cancelPickupClaim, deletePublishedBatch, DEMO_WASTE_CATEGORIES, syncApiClaimsToStore } from "@/lib/demo-workflow-actions";
+import { isDemoMarketplaceId } from "@/data/demo-marketplace";
+import { getActiveStoredClaims, markClaimsPickedUp, resolveLocalWasteListing, toStoredPickupClaims } from "@/lib/demo-workflow-store";
 import {
   commitRoute,
   createMaterialBatch,
@@ -40,6 +44,8 @@ function parsePreview(preview: Record<string, unknown>) {
 function CollectorSortingContent() {
   const { accessToken } = useAuth();
   const { pushToast } = useToast();
+  const { publishedBatches, refresh: refreshWorkflow } = useDemoWorkflow();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const batchesQuery = useAsyncData(
     () => listCollectorBatches(accessToken!),
     [accessToken],
@@ -57,20 +63,63 @@ function CollectorSortingContent() {
     }
   };
 
+  const apiBatches = batchesQuery.data ?? [];
+  const hasAny = apiBatches.length > 0 || publishedBatches.length > 0;
+
+  const removeBatch = (batchId: string) => {
+    setDeletingId(batchId);
+    deletePublishedBatch(batchId);
+    refreshWorkflow();
+    pushToast("Batch dihapus dari etalase industri.", "success");
+    setDeletingId(null);
+  };
+
   return (
     <main className="page-shell grow space-y-6 py-8">
       <PageHeader
-        eyebrow="Pengepul"
-        title="Pemilahan Sampah"
-        description="Kelola batch bahan baku hasil pemilahan sebelum dipublikasikan ke marketplace."
+        eyebrow="Pengepul · Langkah 3"
+        title="Pilah jadi Bahan Baku"
+        description="Kelola batch bahan baku hasil pemilahan sebelum dipublikasikan ke marketplace industri."
         actions={
           <Link href={routes.collectorMaterialsNew} className="rounded-full bg-[var(--color-leaf-600)] px-4 py-2 text-sm font-semibold text-white">
-            Buat Batch Baru
+            Langkah 4 · Jual ke Industri
           </Link>
         }
       />
+
+      {publishedBatches.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-leaf-700)]">Batch demo dipublikasikan</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {publishedBatches.map((batch) => (
+              <article key={batch.id} className="rounded-2xl border border-[var(--color-leaf-600)] bg-[var(--color-mint-50)] p-5 shadow-sm">
+                <p className="font-semibold">{batch.name}</p>
+                <p className="text-sm text-[var(--color-ink-600)]">
+                  {formatWeight(batch.total_weight_kg)} · {formatCurrency(batch.price_per_kg)}/kg
+                </p>
+                <StatusBadge label="Tersedia di etalase industri" tone="success" className="mt-2" />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link href={routes.marketplaceMaterials} className="text-sm font-semibold text-[var(--color-leaf-700)]">
+                    Lihat di marketplace industri
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={deletingId === batch.id}
+                    onClick={() => removeBatch(batch.id)}
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-red-700)]"
+                  >
+                    <Trash2 className="size-3.5" />
+                    {deletingId === batch.id ? "Menghapus..." : "Hapus batch"}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2">
-        {(batchesQuery.data ?? []).map((batch) => (
+        {apiBatches.map((batch) => (
           <article key={batch.id} className="rounded-2xl border bg-white p-5 shadow-sm">
             <p className="font-semibold">{batch.name}</p>
             <p className="text-sm text-[var(--color-ink-600)]">{formatWeight(batch.total_weight_kg)} · {formatCurrency(batch.price_per_kg)}/kg</p>
@@ -86,6 +135,23 @@ function CollectorSortingContent() {
           </article>
         ))}
       </div>
+
+      {!batchesQuery.isLoading && !hasAny ? (
+        <div className="rounded-2xl border border-dashed bg-white p-10 text-center">
+          <p className="font-semibold">Belum ada batch bahan baku</p>
+          <p className="mt-2 text-sm text-[var(--color-ink-500)]">
+            Selesaikan rute pengambilan (langkah 2), lalu buat batch dari pickup yang sudah diambil.
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <Link href={routes.pickupRoutes} className="text-sm font-semibold text-[var(--color-leaf-700)]">
+              Kembali ke peta rute
+            </Link>
+            <Link href={routes.collectorMaterialsNew} className="text-sm font-semibold text-[var(--color-leaf-700)]">
+              Buat batch baru
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -93,6 +159,7 @@ function CollectorSortingContent() {
 function CollectorMaterialBatchContent() {
   const { accessToken } = useAuth();
   const { pushToast } = useToast();
+  const { claimRecords, refresh: refreshWorkflow } = useDemoWorkflow();
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [price, setPrice] = useState("");
@@ -100,9 +167,19 @@ function CollectorMaterialBatchContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categoriesQuery = useAsyncData(() => listWasteCategories(), []);
+  const categories = (categoriesQuery.data ?? []).length > 0 ? categoriesQuery.data! : DEMO_WASTE_CATEGORIES;
+
   const claimsQuery = useAsyncData(
-    () => listPickupClaims(accessToken!),
-    [accessToken],
+    async () => {
+      const apiClaims = accessToken ? await listPickupClaims(accessToken).catch(() => []) : [];
+      const stored = toStoredPickupClaims().filter((c) => c.status === "claimed" || c.status === "picked_up");
+      const merged = new Map<string, (typeof stored)[number]>();
+      for (const c of [...apiClaims, ...stored]) {
+        merged.set(c.listing_id, c);
+      }
+      return Array.from(merged.values());
+    },
+    [accessToken, claimRecords],
     Boolean(accessToken),
   );
 
@@ -119,6 +196,25 @@ function CollectorMaterialBatchContent() {
     }
     setIsSubmitting(true);
     try {
+      const storedIds = new Set(getActiveStoredClaims().map((c) => c.listingId));
+      const allFromLocalStore =
+        selectedClaims.length > 0 && selectedClaims.every((id) => storedIds.has(id));
+
+      if (allFromLocalStore) {
+        const cat = categories.find((c) => c.id === categoryId);
+        const batch = createDemoBatchFromClaims({
+          name,
+          categoryId,
+          categoryName: cat?.name ?? "Material",
+          categoryCode: cat?.code ?? "mixed",
+          pricePerKg: Number(price),
+          sourceListingIds: selectedClaims,
+        });
+        refreshWorkflow();
+        pushToast(`Batch "${batch.name}" dipublikasikan ke etalase industri.`, "success");
+        return;
+      }
+
       const batch = await createMaterialBatch(accessToken, {
         category_id: categoryId,
         name,
@@ -136,39 +232,59 @@ function CollectorMaterialBatchContent() {
     }
   };
 
+  const availableClaims = claimsQuery.data ?? [];
+
   return (
     <main className="page-shell grow space-y-6 py-8">
       <PageHeader
-        eyebrow="Pengepul"
-        title="Buat Bahan Baku Baru"
+        eyebrow="Pengepul · Langkah 4"
+        title="Jual ke Industri"
         description="Pilah sampah hasil pickup menjadi batch material dan publikasikan untuk industri."
+        actions={
+          <Link href={routes.marketplaceMaterials} className="rounded-full border border-[var(--color-line)] bg-white px-4 py-2 text-sm font-semibold">
+            Lihat etalase industri
+          </Link>
+        }
       />
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4 rounded-2xl border bg-white p-6 shadow-sm">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama batch (contoh: Plastik PET bersih)" className="w-full rounded-xl border px-4 py-3" />
           <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full rounded-xl border px-4 py-3">
             <option value="">Pilih kategori</option>
-            {(categoriesQuery.data ?? []).map((cat) => (
+            {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
           <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Harga per kg (IDR)" type="number" className="w-full rounded-xl border px-4 py-3" />
-          <button type="button" disabled={isSubmitting} onClick={() => void submit()} className="w-full rounded-full bg-[var(--color-leaf-600)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+          <button type="button" disabled={isSubmitting || availableClaims.length === 0} onClick={() => void submit()} className="w-full rounded-full bg-[var(--color-leaf-600)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
             {isSubmitting ? "Menyimpan..." : "Simpan dan publikasikan"}
           </button>
+          {availableClaims.length === 0 ? (
+            <p className="text-sm text-[var(--color-ink-500)]">
+              Belum ada pickup siap dipilah.{" "}
+              <Link href={routes.pickupRoutes} className="font-semibold text-[var(--color-leaf-700)]">
+                Selesaikan rute pengambilan dulu
+              </Link>
+              .
+            </p>
+          ) : null}
         </div>
         <div className="rounded-2xl border bg-white p-6 shadow-sm">
           <h2 className="font-semibold">Sumber dari pickup</h2>
           <p className="mt-1 text-sm text-[var(--color-ink-500)]">Hubungkan batch dengan listing yang sudah diambil.</p>
           <ul className="mt-4 max-h-64 space-y-2 overflow-y-auto">
-            {(claimsQuery.data ?? []).map((claim) => (
+            {availableClaims.map((claim) => {
+              const stored = claimRecords.find((r) => r.listingId === claim.listing_id);
+              const waste = resolveLocalWasteListing(claim.listing_id);
+              const label = stored?.title ?? waste?.title ?? `Listing ${claim.listing_id.slice(0, 8)}`;
+              return (
               <li key={claim.id}>
                 <label className="flex items-center gap-2 rounded-lg border p-3 text-sm">
                   <input type="checkbox" checked={selectedClaims.includes(claim.listing_id)} onChange={() => toggleClaim(claim.listing_id)} />
-                  Listing {claim.listing_id.slice(0, 8)} · {wasteListingStatusLabels[claim.status as keyof typeof wasteListingStatusLabels] ?? claim.status}
+                  {label} · {wasteListingStatusLabels[claim.status as keyof typeof wasteListingStatusLabels] ?? claim.status}
                 </label>
               </li>
-            ))}
+            );})}
           </ul>
         </div>
       </section>
@@ -179,22 +295,68 @@ function CollectorMaterialBatchContent() {
 function PickupRoutesContent() {
   const { accessToken } = useAuth();
   const { pushToast } = useToast();
+  const { storedClaimListings, claimedListingIds, claimRecords, refresh: refreshWorkflow } = useDemoWorkflow();
   const [selected, setSelected] = useState<string[]>([]);
   const [preview, setPreview] = useState<Record<string, unknown> | null>(null);
   const [routeId, setRouteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [usedDemoPreview, setUsedDemoPreview] = useState(false);
+  const [didAutoSelect, setDidAutoSelect] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(true);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    let cancelled = false;
+    setIsSyncing(true);
+    void syncApiClaimsToStore(accessToken).finally(() => {
+      if (!cancelled) {
+        refreshWorkflow();
+        setIsSyncing(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, refreshWorkflow]);
 
   const mapQuery = useAsyncData(
     () => getPickupMapData(accessToken!),
-    [accessToken],
+    [accessToken, claimRecords.length],
     Boolean(accessToken),
   );
 
   const mapData = useMemo(
-    () => mergePickupMapData(mapQuery.data ?? null),
-    [mapQuery.data],
+    () => mergePickupMapData(mapQuery.data ?? null, storedClaimListings),
+    [mapQuery.data, storedClaimListings],
   );
+
+  useEffect(() => {
+    if (!didAutoSelect && mapData.listings.length > 0) {
+      setSelected(mapData.listings.map((l) => l.id));
+      setDidAutoSelect(true);
+    }
+    if (mapData.listings.length === 0) {
+      setDidAutoSelect(false);
+      setSelected([]);
+    }
+  }, [mapData.listings, didAutoSelect]);
+
+  const cancelClaim = async (listingId: string) => {
+    if (!accessToken) return;
+    setCancellingId(listingId);
+    try {
+      await cancelPickupClaim(accessToken, listingId);
+      setSelected((prev) => prev.filter((id) => id !== listingId));
+      setPreview(null);
+      refreshWorkflow();
+      pushToast("Pickup dihapus dari rute.", "success");
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : "Gagal menghapus pickup.", "error");
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const mapPoints = useMemo(
     () =>
@@ -252,7 +414,9 @@ function PickupRoutesContent() {
       const demo = buildDemoRoutePreview(selected, mapData.listings);
       setPreview(demo as unknown as Record<string, unknown>);
       setUsedDemoPreview(true);
-      pushToast("Pratinjau rute (nearest-neighbor demo) — estimasi jarak & biaya.", "success");
+      markClaimsPickedUp(selected);
+      refreshWorkflow();
+      pushToast("Pratinjau rute siap. Pickup ditandai diambil — lanjut ke Pemilahan.", "success");
     } finally {
       setIsLoading(false);
     }
@@ -260,8 +424,15 @@ function PickupRoutesContent() {
 
   const commit = async () => {
     if (!accessToken || selected.length === 0) return;
-    if (mapData.isDemoFallback || selected.some((id) => id.startsWith("demo-"))) {
-      pushToast("Data demo: buat listing nyata di backend untuk menyimpan rute permanen.", "error");
+    const allLocal = selected.every((id) => getActiveStoredClaims().some((c) => c.listingId === id));
+    if (allLocal) {
+      markClaimsPickedUp(selected);
+      refreshWorkflow();
+      pushToast("Rute tersimpan. Lanjut ke Pemilahan → Jual ke Industri.", "success");
+      return;
+    }
+    if (mapData.isDemoFallback || selected.some((id) => isDemoMarketplaceId(id))) {
+      pushToast("Campur listing demo & nyata tidak bisa disimpan ke backend. Pilih hanya listing demo atau hanya listing API.", "error");
       return;
     }
     setIsLoading(true);
@@ -279,14 +450,37 @@ function PickupRoutesContent() {
   return (
     <main className="page-shell grow space-y-6 py-8">
       <PageHeader
-        eyebrow="Pengepul"
+        eyebrow="Pengepul · Langkah 2"
         title="Peta & Rute Pengambilan Optimal"
         description="Pilih titik pickup di peta OpenStreetMap, optimasi urutan nearest-neighbor, lihat estimasi jarak & biaya."
+        actions={
+          claimedListingIds.length > 0 ? (
+            <Link href={routes.collectorSorting} className="rounded-full bg-[var(--color-leaf-600)] px-4 py-2 text-sm font-semibold text-white">
+              Langkah 3 · Pemilahan
+            </Link>
+          ) : (
+            <Link href={routes.collectorPickups} className="rounded-full border border-[var(--color-line)] bg-white px-4 py-2 text-sm font-semibold">
+              Langkah 1 · Klaim Pickup
+            </Link>
+          )
+        }
       />
 
-      {mapData.isDemoFallback ? (
+      {isSyncing ? (
+        <p className="text-sm text-[var(--color-ink-500)]">Menyinkronkan pickup yang diklaim...</p>
+      ) : null}
+
+      {mapData.listings.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--color-leaf-600)] bg-[var(--color-mint-50)] px-4 py-3 text-sm text-[var(--color-ink-600)]">
-          Menampilkan data demo Surabaya karena belum ada listing pickup dari API. Pratinjau rute & peta tetap bisa dicoba.
+          Belum ada pickup diklaim.{" "}
+          <Link href={routes.collectorPickups} className="font-semibold text-[var(--color-leaf-700)]">
+            Klaim sampah RT di Langkah 1
+          </Link>
+          , lalu kembali ke halaman ini.
+        </p>
+      ) : mapData.isDemoFallback ? (
+        <p className="rounded-xl border border-dashed border-[var(--color-leaf-600)] bg-[var(--color-mint-50)] px-4 py-3 text-sm text-[var(--color-ink-600)]">
+          Menampilkan {mapData.listings.length} pickup yang sudah Anda klaim. Centang titik, optimasi rute, lalu lanjut pemilahan.
         </p>
       ) : null}
 
@@ -306,17 +500,28 @@ function PickupRoutesContent() {
           <ul className="mt-4 max-h-80 space-y-2 overflow-y-auto">
             {mapData.listings.map((listing) => (
               <li key={listing.id}>
-                <label className="flex items-start gap-3 rounded-lg border p-3 text-sm hover:bg-[var(--color-sage-50)]">
-                  <input type="checkbox" checked={selected.includes(listing.id)} onChange={() => toggleListing(listing.id)} className="mt-1" />
-                  <span>
-                    <span className="font-semibold">{listing.title}</span>
-                    <br />
-                    <span className="text-[var(--color-ink-500)]">
-                      {listing.district ?? listing.city ?? "Lokasi"} · {formatWeight(listing.estimated_weight_kg)}
-                      {listing.distance_km != null ? ` · ${listing.distance_km.toFixed(1)} km` : ""}
+                <div className="flex items-start gap-2 rounded-lg border p-3 text-sm hover:bg-[var(--color-sage-50)]">
+                  <label className="flex flex-1 items-start gap-3">
+                    <input type="checkbox" checked={selected.includes(listing.id)} onChange={() => toggleListing(listing.id)} className="mt-1" />
+                    <span>
+                      <span className="font-semibold">{listing.title}</span>
+                      <br />
+                      <span className="text-[var(--color-ink-500)]">
+                        {listing.district ?? listing.city ?? "Lokasi"} · {formatWeight(listing.estimated_weight_kg)}
+                        {listing.distance_km != null ? ` · ${listing.distance_km.toFixed(1)} km` : ""}
+                      </span>
                     </span>
-                  </span>
-                </label>
+                  </label>
+                  <button
+                    type="button"
+                    disabled={cancellingId === listing.id}
+                    onClick={() => void cancelClaim(listing.id)}
+                    className="shrink-0 rounded-full border border-[var(--color-red-200)] p-2 text-[var(--color-red-700)] disabled:opacity-60"
+                    aria-label={`Hapus klaim ${listing.title}`}
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -339,7 +544,7 @@ function PickupRoutesContent() {
             <div className="mt-4 space-y-4">
               {usedDemoPreview ? (
                 <p className="rounded-lg bg-[var(--color-amber-100)] px-3 py-2 text-xs text-[var(--color-earth-700)]">
-                  Estimasi algoritmik nearest-neighbor + haversine (fallback demo).
+                  Estimasi nearest-neighbor + haversine. Pickup ditandai diambil — lanjut buat batch bahan baku.
                 </p>
               ) : null}
               <div className="grid grid-cols-3 gap-3 text-center">
@@ -368,8 +573,17 @@ function PickupRoutesContent() {
               </ol>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-[var(--color-ink-500)]">Centang titik di daftar, lalu klik optimasi rute.</p>
+            <p className="mt-4 text-sm text-[var(--color-ink-500)]">
+              {mapData.listings.length === 0
+                ? "Klaim pickup terlebih dahulu di Langkah 1."
+                : "Titik sudah dipilih otomatis. Klik optimasi rute untuk melihat urutan tercepat."}
+            </p>
           )}
+          {usedDemoPreview ? (
+            <Link href={routes.collectorMaterialsNew} className="mt-4 inline-flex rounded-full bg-[var(--color-forest-900)] px-4 py-2 text-sm font-semibold text-white">
+              Langkah 4 · Buat batch bahan baku
+            </Link>
+          ) : null}
           {routeId ? (
             <Link href={routes.pickupDetail(routeId)} className="mt-4 inline-flex rounded-full bg-[var(--color-forest-900)] px-4 py-2 text-sm font-semibold text-white">
               Lihat detail rute

@@ -18,8 +18,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="id" className={cn("font-sans", geist.variable)}>
-      <body className="min-h-screen bg-[var(--color-sage-50)] text-[var(--color-ink-900)] antialiased">
+    <html lang="id" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
+      <body
+        className="min-h-screen bg-[var(--color-sage-50)] text-[var(--color-ink-900)] antialiased"
+        suppressHydrationWarning
+      >
         <ClientRoot>{children}</ClientRoot>
       </body>
     </html>
